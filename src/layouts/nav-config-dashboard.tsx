@@ -29,8 +29,8 @@ export const navData = [
     icon: icon('ic-user'),
   },
   {
-    title: 'Product',
-    path: '/products',
+    title: 'Events',
+    path: '/events',
     icon: icon('ic-cart'),
     info: (
       <Label color="error" variant="inverted">

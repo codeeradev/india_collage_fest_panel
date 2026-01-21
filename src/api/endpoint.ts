@@ -1,6 +1,6 @@
 // export const API_BASE_URL = "https://api.fivlia.in";
-// export const API_BASE_URL = 'http://localhost:7860';
-export const API_BASE_URL = "https://india-collage-fest-api.onrender.com";
+export const API_BASE_URL = 'http://localhost:7860';
+// export const API_BASE_URL = "https://india-collage-fest-api.onrender.com";
 
 // Define all endpoints here
 export const ENDPOINTS = {
@@ -11,4 +11,8 @@ export const ENDPOINTS = {
   GET_CITY:'admin/get-city',
   GET_SUBCATEGORY_BY_CATEGORY: (categoryId: string) => `admin/get-sub-category/${categoryId}`,
   EDIT_CITY: (id: string) => `admin/edit-city/${id}`,
+
+  ADD_EVENT: "/add-event",
+  GET_EVENTS: "admin/get-event",
+  EDIT_EVENT: (id: string) => `admin/editEvents/${id}`,
 };
