@@ -1,6 +1,6 @@
 // export const API_BASE_URL = "https://api.fivlia.in";
-export const API_BASE_URL = 'http://localhost:7860';
-// export const API_BASE_URL = "https://india-collage-fest-api.onrender.com";
+// export const API_BASE_URL = 'http://localhost:7860';
+export const API_BASE_URL = "https://india-collage-fest-api.onrender.com";
 
 // Define all endpoints here
 export const ENDPOINTS = {
