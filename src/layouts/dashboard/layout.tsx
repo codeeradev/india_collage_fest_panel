@@ -9,6 +9,8 @@ import { useTheme } from '@mui/material/styles';
 
 import { _langs, _notifications } from 'src/_mock';
 
+import { useAuth } from 'src/auth/useAuth';
+
 import { NavMobile, NavDesktop } from './nav';
 import { layoutClasses } from '../core/classes';
 import { _account } from '../nav-config-account';
@@ -48,6 +50,8 @@ export function DashboardLayout({
   layoutQuery = 'lg',
 }: DashboardLayoutProps) {
   const theme = useTheme();
+
+  useAuth();
 
   const { value: open, onFalse: onClose, onTrue: onOpen } = useBoolean();
 

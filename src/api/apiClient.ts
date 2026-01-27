@@ -30,7 +30,7 @@ const apiClient: AxiosInstance = axios.create({
 // Token helpers
 // ----------------------------------------------------------------------
 
-const getToken = (): string | null => localStorage.getItem('token');
+const getToken = (): string | null => localStorage.getItem('accessToken');
 
 // ----------------------------------------------------------------------
 // Helper to attach auth header

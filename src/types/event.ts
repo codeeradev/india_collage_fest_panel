@@ -23,6 +23,8 @@ export interface Event {
     name: string;
   };
 
+  address: string;
+
   sub_category?: {
     _id: string;
     name: string;

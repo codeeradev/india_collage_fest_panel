@@ -1,4 +1,3 @@
-// export const API_BASE_URL = "https://api.fivlia.in";
 // export const API_BASE_URL = 'http://localhost:7860';
 export const API_BASE_URL = "https://india-collage-fest-api.onrender.com";
 
@@ -14,5 +13,10 @@ export const ENDPOINTS = {
 
   ADD_EVENT: "/add-event",
   GET_EVENTS: "admin/get-event",
+  GET_APPROVALS_REQUEST: "admin/get-approvals-request",
+  APPROVAL_ACTION: 'admin/approval-action',
+
+  LOGIN_PANEL: 'admin/login-panel',
+
   EDIT_EVENT: (id: string) => `admin/editEvents/${id}`,
 };

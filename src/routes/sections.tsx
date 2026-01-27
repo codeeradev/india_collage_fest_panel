@@ -10,12 +10,15 @@ import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgr
 import { AuthLayout } from 'src/layouts/auth';
 import { DashboardLayout } from 'src/layouts/dashboard';
 
+import ProtectedRoute from 'src/auth/ProtectedRoute';
+
 // ----------------------------------------------------------------------
 
 export const DashboardPage = lazy(() => import('src/pages/dashboard'));
 export const CategoryPage = lazy(() => import('src/pages/category'));
 export const CityPage = lazy(() => import('src/pages/city'));
 export const UserPage = lazy(() => import('src/pages/user'));
+export const ApprovalPage = lazy(() => import('src/pages/approvals'));
 export const SignInPage = lazy(() => import('src/pages/sign-in'));
 export const ProductsPage = lazy(() => import('src/pages/events'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
@@ -43,20 +46,72 @@ const renderFallback = () => (
 export const routesSection: RouteObject[] = [
   {
     element: (
-      <DashboardLayout>
-        <Suspense fallback={renderFallback()}>
-          <Outlet />
-        </Suspense>
-      </DashboardLayout>
+      <ProtectedRoute>
+        <DashboardLayout>
+          <Suspense fallback={renderFallback()}>
+            <Outlet />
+          </Suspense>
+        </DashboardLayout>
+      </ProtectedRoute>
     ),
     children: [
-      { index: true, element: <DashboardPage /> },
-      { path: 'category', element: <CategoryPage /> },
-      { path: 'user', element: <UserPage /> },
-      { path: 'events', element: <ProductsPage /> },
-      { path: 'city', element: <CityPage /> },
+      // ✅ Admin + Organizer
+      {
+        index: true,
+        element: (
+          <ProtectedRoute allowedRoles={[1, 3]}>
+            <DashboardPage />
+          </ProtectedRoute>
+        ),
+      },
+
+      // ✅ Admin only
+      {
+        path: 'category',
+        element: (
+          <ProtectedRoute allowedRoles={[1]}>
+            <CategoryPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'user',
+        element: (
+          <ProtectedRoute allowedRoles={[1]}>
+            <UserPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'approvals',
+        element: (
+          <ProtectedRoute allowedRoles={[1]}>
+            <ApprovalPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'city',
+        element: (
+          <ProtectedRoute allowedRoles={[1]}>
+            <CityPage />
+          </ProtectedRoute>
+        ),
+      },
+
+      // ✅ Admin + Organizer
+      {
+        path: 'events',
+        element: (
+          <ProtectedRoute allowedRoles={[1, 3]}>
+            <ProductsPage />
+          </ProtectedRoute>
+        ),
+      },
     ],
   },
+
+  // 🔓 public route
   {
     path: 'sign-in',
     element: (
@@ -65,9 +120,12 @@ export const routesSection: RouteObject[] = [
       </AuthLayout>
     ),
   },
+
   {
     path: '404',
     element: <Page404 />,
   },
+
   { path: '*', element: <Page404 /> },
 ];
+

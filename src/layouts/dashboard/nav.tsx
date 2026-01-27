@@ -15,7 +15,8 @@ import { RouterLink } from 'src/routes/components';
 import { Logo } from 'src/components/logo';
 import { Scrollbar } from 'src/components/scrollbar';
 
-import { NavUpgrade } from '../components/nav-upgrade';
+import { getToken, getTokenPayload } from 'src/auth/auth';
+
 import { WorkspacesPopover } from '../components/workspaces-popover';
 
 import type { NavItem } from '../nav-config-dashboard';
@@ -110,6 +111,13 @@ export function NavMobile({
 export function NavContent({ data, slots, workspaces, sx }: NavContentProps) {
   const pathname = usePathname();
 
+  const token = getToken();
+  const payload = token ? getTokenPayload(token) : null;
+  const roleId = payload?.roleId;
+
+  // ✅ FILTER MENU BY ROLE
+  const visibleNav = data.filter((item) => !item.roles || item.roles.includes(roleId));
+
   return (
     <>
       <Logo />
@@ -138,14 +146,15 @@ export function NavContent({ data, slots, workspaces, sx }: NavContentProps) {
               flexDirection: 'column',
             }}
           >
-            {data.map((item) => {
+            {visibleNav.map((item) => {
               const isActived = item.path === pathname;
 
               return (
                 <ListItem disableGutters disablePadding key={item.title}>
                   <ListItemButton
                     disableGutters
-                    component={RouterLink}
+                    onClick={item.onClick}
+                    component={item.path ? RouterLink : 'button'}
                     href={item.path}
                     sx={[
                       (theme) => ({
