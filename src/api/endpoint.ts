@@ -18,5 +18,8 @@ export const ENDPOINTS = {
 
   LOGIN_PANEL: 'admin/login-panel',
 
+  EDIT_PROFILE: "admin/edit-profile",
+
+  GET_PROFILE: (id: string) => `admin/get-profile/${id}`,
   EDIT_EVENT: (id: string) => `admin/editEvents/${id}`,
 };

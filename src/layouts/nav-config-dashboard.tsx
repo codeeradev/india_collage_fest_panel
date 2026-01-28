@@ -52,6 +52,12 @@ export const navData = [
     ),
     roles: [1, 3],
   },
+    {
+    title: 'Profile',
+    path: '/profile',
+    icon: icon('ic-cart'),
+    roles: [1, 3],
+  },
   {
     title: 'City',
     path: '/city',

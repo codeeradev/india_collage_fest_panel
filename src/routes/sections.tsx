@@ -21,6 +21,7 @@ export const UserPage = lazy(() => import('src/pages/user'));
 export const ApprovalPage = lazy(() => import('src/pages/approvals'));
 export const SignInPage = lazy(() => import('src/pages/sign-in'));
 export const ProductsPage = lazy(() => import('src/pages/events'));
+export const ProfilePage = lazy(() => import('src/pages/profile'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 
 const renderFallback = () => (
@@ -105,6 +106,14 @@ export const routesSection: RouteObject[] = [
         element: (
           <ProtectedRoute allowedRoles={[1, 3]}>
             <ProductsPage />
+          </ProtectedRoute>
+        ),
+      },
+       {
+        path: 'profile',
+        element: (
+          <ProtectedRoute allowedRoles={[1, 3]}>
+            <ProfilePage />
           </ProtectedRoute>
         ),
       },

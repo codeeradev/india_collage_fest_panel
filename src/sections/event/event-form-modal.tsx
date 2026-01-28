@@ -40,7 +40,7 @@ const EMPTY_FORM = {
   location: '',
   ticket_price: '',
   category: '',
-  subCategory: '',
+  sub_category: '',
   address: '',
 
   eventMode: 'offline',
@@ -54,13 +54,7 @@ const EMPTY_FORM = {
 
 // ----------------------------------------------------------------------
 
-export default function EventFormModal({
-  open,
-  mode,
-  event,
-  onClose,
-  onSuccess,
-}: Props) {
+export default function EventFormModal({ open, mode, event, onClose, onSuccess }: Props) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -76,18 +70,18 @@ export default function EventFormModal({
   // LOAD DROPDOWNS
   // --------------------------------------------------
 
+  const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_URL;
+
   useEffect(() => {
     get(ENDPOINTS.GET_CITY).then((r) => setCities(r.data.data || []));
-    get(ENDPOINTS.GET_CATEGORY).then((r) =>
-      setCategories(r.data.category || [])
-    );
+    get(ENDPOINTS.GET_CATEGORY).then((r) => setCategories(r.data.category || []));
   }, []);
 
   useEffect(() => {
     if (!form.category) return;
 
-    get(ENDPOINTS.GET_SUBCATEGORY_BY_CATEGORY(form.category)).then(
-      (r) => setSubCategories(r.data.subCategories || [])
+    get(ENDPOINTS.GET_SUBCATEGORY_BY_CATEGORY(form.category)).then((r) =>
+      setSubCategories(r.data.subCategories || [])
     );
   }, [form.category]);
 
@@ -107,19 +101,13 @@ export default function EventFormModal({
         description: event.description || '',
         image: null,
 
-        location:
-          typeof event.location === 'string'
-            ? event.location
-            : event.location?._id || '',
+        location: typeof event.location === 'string' ? event.location : event.location?._id || '',
 
         ticket_price: event.ticket_price || '',
 
-        category:
-          typeof event.category === 'string'
-            ? event.category
-            : event.category?._id || '',
+        category: typeof event.category === 'string' ? event.category : event.category?._id || '',
 
-        subCategory:
+        sub_category:
           typeof event.sub_category === 'string'
             ? event.sub_category
             : event.sub_category?._id || '',
@@ -135,7 +123,7 @@ export default function EventFormModal({
         end_time: event.end_time || '',
       });
 
-      setPreview(event.image || null);
+      setPreview(event.image ? IMAGE_BASE_URL + event.image : null);
     } else {
       setForm(EMPTY_FORM);
       setPreview(null);
@@ -174,10 +162,7 @@ export default function EventFormModal({
       onSuccess();
       setTimeout(onClose, 700);
     } catch (e: any) {
-      setError(
-        e?.response?.data?.message ||
-          'Something went wrong'
-      );
+      setError(e?.response?.data?.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
@@ -189,9 +174,7 @@ export default function EventFormModal({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        {mode === 'create' ? 'Create Event' : 'Edit Event'}
-      </DialogTitle>
+      <DialogTitle>{mode === 'create' ? 'Create Event' : 'Edit Event'}</DialogTitle>
 
       <DialogContent>
         <Stack spacing={2} mt={1}>
@@ -201,9 +184,7 @@ export default function EventFormModal({
           <TextField
             label="Title"
             value={form.title}
-            onChange={(e) =>
-              setForm({ ...form, title: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
           />
 
           <TextField
@@ -211,9 +192,7 @@ export default function EventFormModal({
             multiline
             rows={3}
             value={form.description}
-            onChange={(e) =>
-              setForm({ ...form, description: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
 
           {/* IMAGE */}
@@ -249,9 +228,7 @@ export default function EventFormModal({
             select
             label="City"
             value={form.location}
-            onChange={(e) =>
-              setForm({ ...form, location: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, location: e.target.value })}
           >
             {cities.map((c) => (
               <MenuItem key={c._id} value={c._id}>
@@ -269,7 +246,7 @@ export default function EventFormModal({
               setForm({
                 ...form,
                 category: e.target.value,
-                subCategory: '',
+                sub_category: '',
               })
             }
           >
@@ -284,11 +261,9 @@ export default function EventFormModal({
           <TextField
             select
             label="Sub Category"
-            value={form.subCategory}
+            value={form.sub_category}
             disabled={!subCategories.length}
-            onChange={(e) =>
-              setForm({ ...form, subCategory: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, sub_category: e.target.value })}
           >
             {subCategories.map((s) => (
               <MenuItem key={s._id} value={s._id}>
@@ -300,17 +275,13 @@ export default function EventFormModal({
           <TextField
             label="Ticket Price"
             value={form.ticket_price}
-            onChange={(e) =>
-              setForm({ ...form, ticket_price: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, ticket_price: e.target.value })}
           />
 
           <TextField
             label="Address"
             value={form.address}
-            onChange={(e) =>
-              setForm({ ...form, address: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, address: e.target.value })}
           />
 
           <FormControlLabel
@@ -333,9 +304,7 @@ export default function EventFormModal({
             label="Start Date"
             InputLabelProps={{ shrink: true }}
             value={form.start_date}
-            onChange={(e) =>
-              setForm({ ...form, start_date: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, start_date: e.target.value })}
           />
 
           <TextField
@@ -343,9 +312,7 @@ export default function EventFormModal({
             label="End Date"
             InputLabelProps={{ shrink: true }}
             value={form.end_date}
-            onChange={(e) =>
-              setForm({ ...form, end_date: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, end_date: e.target.value })}
           />
 
           <TextField
@@ -353,9 +320,7 @@ export default function EventFormModal({
             label="Start Time"
             InputLabelProps={{ shrink: true }}
             value={form.start_time}
-            onChange={(e) =>
-              setForm({ ...form, start_time: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, start_time: e.target.value })}
           />
 
           <TextField
@@ -363,9 +328,7 @@ export default function EventFormModal({
             label="End Time"
             InputLabelProps={{ shrink: true }}
             value={form.end_time}
-            onChange={(e) =>
-              setForm({ ...form, end_time: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, end_time: e.target.value })}
           />
         </Stack>
       </DialogContent>
@@ -377,11 +340,7 @@ export default function EventFormModal({
           variant="contained"
           onClick={handleSubmit}
           disabled={loading}
-          startIcon={
-            loading ? (
-              <CircularProgress size={18} color="inherit" />
-            ) : null
-          }
+          startIcon={loading ? <CircularProgress size={18} color="inherit" /> : null}
         >
           {loading ? 'Saving...' : 'Save'}
         </Button>
