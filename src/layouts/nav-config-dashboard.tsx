@@ -65,6 +65,12 @@ export const navData = [
     roles: [1],
   },
   {
+    title: 'Mou Managment',
+    path: '/mou',
+    icon: icon('ic-blog'),
+    roles: [1],
+  },
+  {
     title: 'Logout',
     path: '#',
     icon: icon('ic-lock'),

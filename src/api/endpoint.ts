@@ -22,4 +22,6 @@ export const ENDPOINTS = {
 
   GET_PROFILE: (id: string) => `admin/get-profile/${id}`,
   EDIT_EVENT: (id: string) => `admin/editEvents/${id}`,
+
+  GET_MY_MOU: "admin/organizer/mou"
 };
