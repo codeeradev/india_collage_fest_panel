@@ -25,8 +25,8 @@ export const ENDPOINTS = {
   EDIT_EVENT: (id: string) => `admin/editEvents/${id}`,
 
   GET_MY_MOU: "admin/organizer/mou",
-  SEND_MOU_OTP: "admin/mou/send-otp",
-  VERIFY_MOU_OTP: "admin/mou/verify-otp",
+  SEND_MOU_OTP: "admin/organizer/mou/send-otp",
+  VERIFY_MOU_OTP: "admin/organizer/mou/verify-otp",
 
   PREVIEW_MOU: "admin/organizer/mou/preview",
 };

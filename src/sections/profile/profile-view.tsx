@@ -20,6 +20,8 @@ import { get, post } from 'src/api/apiClient';
 
 import OtpModal from 'src/sections/mouManagment/otp-modal';
 
+import MouPreviewModal from '../mouManagment/mou-preview-modal';
+
 const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_URL;
 
 /* ===================================================== */
@@ -103,16 +105,17 @@ export default function ProfileView() {
   const [loading, setLoading] = useState(false);
   const [openOtp, setOpenOtp] = useState(false);
 
+  const [openPreview, setOpenPreview] = useState(false);
+  const [previewPdf, setPreviewPdf] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+
   /* ================= LOAD ================= */
 
   useEffect(() => {
     if (!user?._id) return;
 
     const load = async () => {
-      const req: Promise<any>[] = [
-        get(ENDPOINTS.GET_PROFILE(user._id)),
-        get(ENDPOINTS.GET_CITY),
-      ];
+      const req: Promise<any>[] = [get(ENDPOINTS.GET_PROFILE(user._id)), get(ENDPOINTS.GET_CITY)];
 
       if (isOrganizer) {
         req.push(get(ENDPOINTS.GET_MY_MOU, { authRequired: true }));
@@ -172,6 +175,30 @@ export default function ProfileView() {
     if (!v) return undefined;
     if (v.startsWith('blob:')) return v;
     return IMAGE_BASE_URL + v;
+  };
+
+  const openMouPreview = async () => {
+    try {
+      setPreviewLoading(true);
+
+      const res = await get(ENDPOINTS.PREVIEW_MOU, {
+        authRequired: true,
+        responseType: 'blob',
+      });
+
+      const file = new Blob([res.data], {
+        type: 'application/pdf',
+      });
+
+      const url = URL.createObjectURL(file);
+
+      setPreviewPdf(url);
+      setOpenPreview(true);
+    } catch (err) {
+      alert('Failed to load PDF preview');
+    } finally {
+      setPreviewLoading(false);
+    }
   };
 
   /* ================= UI ================= */
@@ -241,9 +268,7 @@ export default function ProfileView() {
           />
 
           <Box>
-            <Typography variant="h6">
-              {form.name || 'Your Name'}
-            </Typography>
+            <Typography variant="h6">{form.name || 'Your Name'}</Typography>
 
             <Typography variant="body2" color="text.secondary" mb={1}>
               Profile picture
@@ -287,9 +312,7 @@ export default function ProfileView() {
               fullWidth
               label="Full Name"
               value={form.name}
-              onChange={(e) =>
-                setForm({ ...form, name: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
           </GridItem>
 
@@ -303,9 +326,7 @@ export default function ProfileView() {
               fullWidth
               label="City"
               value={form.location}
-              onChange={(e) =>
-                setForm({ ...form, location: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, location: e.target.value })}
             >
               {cities.map((c) => (
                 <MenuItem key={c._id} value={c._id}>
@@ -320,9 +341,7 @@ export default function ProfileView() {
               fullWidth
               label="Password"
               value={form.password}
-              onChange={(e) =>
-                setForm({ ...form, password: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
             />
           </GridItem>
 
@@ -360,34 +379,53 @@ export default function ProfileView() {
               <GridItem xs={12} md={6}>
                 <Typography variant="subtitle2">Signed At</Typography>
                 <Typography>
-                  {mou.signedAt
-                    ? new Date(mou.signedAt).toLocaleDateString()
-                    : '-'}
+                  {mou.signedAt ? new Date(mou.signedAt).toLocaleDateString() : '-'}
                 </Typography>
               </GridItem>
 
-              {mou.pdfUrl && (
-                <GridItem xs={12}>
-                  <Button variant="outlined" href={mou.pdfUrl} target="_blank">
-                    View MOU PDF
-                  </Button>
-                </GridItem>
-              )}
-
-              {mou.status !== 'signed' && (
-                <GridItem xs={12}>
+              <GridItem xs={12}>
+                <Box sx={{ display: 'flex', gap: 2 }}>
                   <Button
-                    variant="contained"
-                    onClick={() => setOpenOtp(true)}
+                    variant="outlined"
+                    onClick={openMouPreview}
+                    disabled={previewLoading}
+                    startIcon={previewLoading ? <CircularProgress size={18} /> : null}
                   >
-                    Sign MOU
+                    {previewLoading ? 'Loading...' : 'Preview MOU'}
                   </Button>
-                </GridItem>
-              )}
+
+                  {mou.status !== 'signed' && (
+                    <Button
+                      variant="contained"
+                      onClick={async () => {
+                        await post(ENDPOINTS.SEND_MOU_OTP, {}, { authRequired: true });
+                        setOpenOtp(true);
+                      }}
+                    >
+                      Sign MOU
+                    </Button>
+                  )}
+
+                  {mou.signedPdfUrl && (
+                    <Button
+                      variant="outlined"
+                      href={`${IMAGE_BASE_URL}${mou.signedPdfUrl}`}
+                      target="_blank"
+                    >
+                      Download Signed MOU
+                    </Button>
+                  )}
+                </Box>
+              </GridItem>
             </GridContainer>
           )}
         </Card>
       )}
+      <MouPreviewModal
+        open={openPreview}
+        pdfUrl={previewPdf}
+        onClose={() => setOpenPreview(false)}
+      />
 
       <OtpModal
         open={openOtp}

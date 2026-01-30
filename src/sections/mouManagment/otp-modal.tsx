@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { Box, Dialog, Button, TextField } from "@mui/material";
 
@@ -16,6 +16,12 @@ export default function OtpModal({
 }) {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+  if (!open) {
+    setOtp("");
+  }
+}, [open]);
 
   const verifyOtp = async () => {
     try {
