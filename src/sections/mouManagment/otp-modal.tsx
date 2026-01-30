@@ -1,13 +1,7 @@
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  Button,
-  TextField,
-  Stack,
-} from "@mui/material";
-
 import { useState } from "react";
+
+import { Box, Dialog, Button, TextField } from "@mui/material";
+
 import { post } from "src/api/apiClient";
 import { ENDPOINTS } from "src/api/endpoint";
 
@@ -21,42 +15,50 @@ export default function OtpModal({
   reload: () => void;
 }) {
   const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const verifyOtp = async () => {
+    try {
+      setLoading(true);
+
+      await post(
+        ENDPOINTS.VERIFY_MOU_OTP,
+        { otp },
+        { authRequired: true }
+      );
+
+      alert("MOU signed successfully");
+
+      onClose();
+      reload();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || "Invalid OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Dialog open={open} onClose={onClose}>
-      <DialogTitle>Sign MOU</DialogTitle>
+      <Box sx={{ p: 4, width: 350 }}>
+        <TextField
+          fullWidth
+          label="Enter 6 digit OTP"
+          value={otp}
+          inputProps={{ maxLength: 6 }}
+          onChange={(e) => setOtp(e.target.value)}
+        />
 
-      <DialogContent>
-        <Stack spacing={2} mt={2}>
-          <Button
-            variant="outlined"
-            onClick={() =>
-              post(ENDPOINTS.SEND_MOU_OTP)
-            }
-          >
-            Send OTP
-          </Button>
-
-          <TextField
-            label="Enter OTP"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-          />
-
-          <Button
-            variant="contained"
-            onClick={async () => {
-              await post(ENDPOINTS.VERIFY_MOU_OTP, {
-                otp,
-              });
-              reload();
-              onClose();
-            }}
-          >
-            Verify & Sign
-          </Button>
-        </Stack>
-      </DialogContent>
+        <Button
+          fullWidth
+          sx={{ mt: 3 }}
+          variant="contained"
+          disabled={otp.length !== 6 || loading}
+          onClick={verifyOtp}
+        >
+          Verify OTP
+        </Button>
+      </Box>
     </Dialog>
   );
 }

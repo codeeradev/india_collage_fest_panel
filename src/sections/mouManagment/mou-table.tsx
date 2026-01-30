@@ -20,6 +20,10 @@ const STATIC_MOU_DATA: MOU[] = [
     },
     status: 'signed',
     pdfUrl: '/dummy/mou.pdf',
+
+    // ✅ required by MOU type
+    signedAt: new Date().toISOString(),
+
     createdAt: new Date().toISOString(),
   },
   {
@@ -31,6 +35,10 @@ const STATIC_MOU_DATA: MOU[] = [
     },
     status: 'otp_sent',
     pdfUrl: '/dummy/mou.pdf',
+
+    // ✅ required by MOU type
+    signedAt: "",
+
     createdAt: new Date().toISOString(),
   },
 ];
@@ -44,7 +52,7 @@ export default function MOUTable({
   rows: MOU[];
   onReload: () => void;
 }) {
-  // ✅ REAL DATA CHECK (IMPORTANT)
+  // ✅ REAL DATA CHECK
   const tableData =
     rows?.some((r) => r?.mouNumber) ? rows : STATIC_MOU_DATA;
 

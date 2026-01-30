@@ -1,3 +1,6 @@
+import { useEffect } from "react";
+import { Icon } from "@iconify/react";
+
 import {
   Dialog,
   DialogTitle,
@@ -5,36 +8,47 @@ import {
   IconButton,
 } from "@mui/material";
 
-import { Iconify } from "src/components/iconify";
+type Props = {
+  open: boolean;
+  onClose: () => void;
+  pdfUrl: string | null;
+};
 
 export default function MouPdfPreview({
   open,
   onClose,
   pdfUrl,
-}: {
-  open: boolean;
-  onClose: () => void;
-  pdfUrl: string;
-}) {
+}: Props) {
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle>
+      <DialogTitle sx={{ position: "relative" }}>
         MOU Document
+
         <IconButton
           onClick={onClose}
           sx={{ position: "absolute", right: 12, top: 12 }}
         >
-          <Iconify icon="mdi:close" />
+          <Icon icon="mdi:close" width={22} />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ height: "80vh" }}>
-        <iframe
-          src={pdfUrl}
-          width="100%"
-          height="100%"
-          style={{ border: "none" }}
-        />
+      <DialogContent sx={{ height: "80vh", p: 0 }}>
+        {pdfUrl && (
+          <iframe
+            src={pdfUrl}
+            title="MOU PDF"
+            width="100%"
+            height="100%"
+            style={{ border: "none" }}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );

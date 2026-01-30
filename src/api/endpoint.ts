@@ -1,5 +1,6 @@
-// export const API_BASE_URL = 'http://localhost:7860';
-export const API_BASE_URL = "https://india-collage-fest-api.onrender.com";
+export const API_BASE_URL = 'http://localhost:7860';
+// export const API_BASE_URL = "https://india-collage-fest-api.onrender.com";
+// export const API_BASE_URL = "http://172.93.223.239:3001/";
 
 // Define all endpoints here
 export const ENDPOINTS = {
@@ -23,5 +24,9 @@ export const ENDPOINTS = {
   GET_PROFILE: (id: string) => `admin/get-profile/${id}`,
   EDIT_EVENT: (id: string) => `admin/editEvents/${id}`,
 
-  GET_MY_MOU: "admin/organizer/mou"
+  GET_MY_MOU: "admin/organizer/mou",
+  SEND_MOU_OTP: "admin/mou/send-otp",
+  VERIFY_MOU_OTP: "admin/mou/verify-otp",
+
+  PREVIEW_MOU: "admin/organizer/mou/preview",
 };

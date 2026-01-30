@@ -1,4 +1,5 @@
 export interface MOU {
+  signedAt: string | number | Date;
   _id: string;
   mouNumber: string;
   organization: {

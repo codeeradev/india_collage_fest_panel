@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react';
 import {
   Box,
   Card,
-  Grid,
   Chip,
   Avatar,
   Button,
@@ -23,16 +22,58 @@ import OtpModal from 'src/sections/mouManagment/otp-modal';
 
 const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_URL;
 
+/* ===================================================== */
+/* EXACT GRID REPLACEMENT — FLEXBOX (1:1 MUI GRID)       */
+/* ===================================================== */
+
+const GridContainer = ({
+  spacing = 3,
+  children,
+}: {
+  spacing?: number;
+  children: React.ReactNode;
+}) => (
+  <Box
+    sx={{
+      display: 'flex',
+      flexWrap: 'wrap',
+      margin: `-${spacing * 4}px`,
+    }}
+  >
+    {children}
+  </Box>
+);
+
+const GridItem = ({
+  xs = 12,
+  md,
+  children,
+}: {
+  xs?: number;
+  md?: number;
+  children: React.ReactNode;
+}) => (
+  <Box
+    sx={{
+      padding: `${3 * 4}px`,
+      width: {
+        xs: `${(xs / 12) * 100}%`,
+        md: md ? `${(md / 12) * 100}%` : undefined,
+      },
+    }}
+  >
+    {children}
+  </Box>
+);
+
+/* ===================================================== */
+
 type City = {
   _id: string;
   city: string;
 };
 
 export default function ProfileView() {
-  // =====================================================
-  // USER + ROLE
-  // =====================================================
-
   const user: User | null = (() => {
     const raw = localStorage.getItem('user');
     return raw ? JSON.parse(raw) : null;
@@ -40,12 +81,7 @@ export default function ProfileView() {
 
   const isOrganizer = user?.roleId === 3;
 
-  // =====================================================
-  // STATE
-  // =====================================================
-
   const [cities, setCities] = useState<City[]>([]);
-
   const [form, setForm] = useState<UserProfileForm>({
     name: '',
     phone: '',
@@ -67,24 +103,22 @@ export default function ProfileView() {
   const [loading, setLoading] = useState(false);
   const [openOtp, setOpenOtp] = useState(false);
 
-  // =====================================================
-  // LOAD DATA
-  // =====================================================
+  /* ================= LOAD ================= */
 
   useEffect(() => {
     if (!user?._id) return;
 
     const load = async () => {
-      const requests: Promise<any>[] = [
+      const req: Promise<any>[] = [
         get(ENDPOINTS.GET_PROFILE(user._id)),
         get(ENDPOINTS.GET_CITY),
       ];
 
       if (isOrganizer) {
-        requests.push(get(ENDPOINTS.GET_MY_MOU, { authRequired: true }));
+        req.push(get(ENDPOINTS.GET_MY_MOU, { authRequired: true }));
       }
 
-      const [profileRes, cityRes, mouRes] = await Promise.all(requests);
+      const [profileRes, cityRes, mouRes] = await Promise.all(req);
 
       const u = profileRes.data.profile;
 
@@ -111,9 +145,7 @@ export default function ProfileView() {
     load();
   }, [user?._id]);
 
-  // =====================================================
-  // SUBMIT PROFILE
-  // =====================================================
+  /* ================= SUBMIT ================= */
 
   const handleSubmit = async () => {
     try {
@@ -128,9 +160,7 @@ export default function ProfileView() {
       if (image) fd.append('image', image);
       if (banner) fd.append('bannerImage', banner);
 
-      await post(ENDPOINTS.EDIT_PROFILE, fd, {
-        authRequired: true,
-      });
+      await post(ENDPOINTS.EDIT_PROFILE, fd, { authRequired: true });
 
       alert('Profile updated successfully');
     } finally {
@@ -138,19 +168,13 @@ export default function ProfileView() {
     }
   };
 
-  // =====================================================
-  // IMAGE HELPER
-  // =====================================================
-
   const img = (v?: string | null) => {
     if (!v) return undefined;
     if (v.startsWith('blob:')) return v;
     return IMAGE_BASE_URL + v;
   };
 
-  // =====================================================
-  // UI
-  // =====================================================
+  /* ================= UI ================= */
 
   return (
     <Box sx={{ px: 4, pb: 6, maxWidth: 1200, mx: 'auto' }}>
@@ -158,9 +182,7 @@ export default function ProfileView() {
         Profile Settings
       </Typography>
 
-      {/* ================================================= */}
-      {/* PROFILE HEADER                                   */}
-      {/* ================================================= */}
+      {/* ================= BANNER + PROFILE ================= */}
 
       <Card sx={{ borderRadius: 6, mb: 6, overflow: 'hidden' }}>
         <Box
@@ -219,7 +241,10 @@ export default function ProfileView() {
           />
 
           <Box>
-            <Typography variant="h6">{form.name || 'Your Name'}</Typography>
+            <Typography variant="h6">
+              {form.name || 'Your Name'}
+            </Typography>
+
             <Typography variant="body2" color="text.secondary" mb={1}>
               Profile picture
             </Typography>
@@ -245,9 +270,7 @@ export default function ProfileView() {
         </Box>
       </Card>
 
-      {/* ================================================= */}
-      {/* ACCOUNT FORM                                     */}
-      {/* ================================================= */}
+      {/* ================= ACCOUNT FORM ================= */}
 
       <Card sx={{ p: 5, borderRadius: 6, maxWidth: 900 }}>
         <Typography variant="h6" mb={1}>
@@ -258,27 +281,31 @@ export default function ProfileView() {
           Update your personal details
         </Typography>
 
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
+        <GridContainer spacing={3}>
+          <GridItem xs={12}>
             <TextField
               fullWidth
               label="Full Name"
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, name: e.target.value })
+              }
             />
-          </Grid>
+          </GridItem>
 
-          <Grid item xs={12} md={6}>
+          <GridItem xs={12} md={6}>
             <TextField fullWidth label="Phone" value={form.phone} disabled />
-          </Grid>
+          </GridItem>
 
-          <Grid item xs={12} md={6}>
+          <GridItem xs={12} md={6}>
             <TextField
               select
               fullWidth
               label="City"
               value={form.location}
-              onChange={(e) => setForm({ ...form, location: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, location: e.target.value })
+              }
             >
               {cities.map((c) => (
                 <MenuItem key={c._id} value={c._id}>
@@ -286,18 +313,20 @@ export default function ProfileView() {
                 </MenuItem>
               ))}
             </TextField>
-          </Grid>
+          </GridItem>
 
-          <Grid item xs={12}>
+          <GridItem xs={12}>
             <TextField
               fullWidth
               label="Password"
               value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, password: e.target.value })
+              }
             />
-          </Grid>
+          </GridItem>
 
-          <Grid item xs={12}>
+          <GridItem xs={12}>
             <Button
               size="large"
               variant="contained"
@@ -307,13 +336,11 @@ export default function ProfileView() {
             >
               Save Changes
             </Button>
-          </Grid>
-        </Grid>
+          </GridItem>
+        </GridContainer>
       </Card>
 
-      {/* ================================================= */}
-      {/* MOU — ORGANIZER ONLY                              */}
-      {/* ================================================= */}
+      {/* ================= MOU ================= */}
 
       {isOrganizer && (
         <Card sx={{ p: 5, borderRadius: 6, maxWidth: 900, mt: 6 }}>
@@ -321,67 +348,46 @@ export default function ProfileView() {
             Memorandum of Understanding (MOU)
           </Typography>
 
-          <Typography variant="body2" color="text.secondary" mb={3}>
-            Legal agreement required to use platform features
-          </Typography>
-
           {mouLoading && <CircularProgress />}
 
           {!mouLoading && mou && (
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
+            <GridContainer spacing={3}>
+              <GridItem xs={12} md={6}>
                 <Typography variant="subtitle2">Status</Typography>
-                <Chip
-                  label={mou.status}
-                  color={
-                    mou.status === 'signed'
-                      ? 'success'
-                      : mou.status === 'otp_sent'
-                      ? 'warning'
-                      : 'default'
-                  }
-                />
-              </Grid>
+                <Chip label={mou.status} />
+              </GridItem>
 
-              <Grid item xs={12} md={6}>
+              <GridItem xs={12} md={6}>
                 <Typography variant="subtitle2">Signed At</Typography>
                 <Typography>
                   {mou.signedAt
                     ? new Date(mou.signedAt).toLocaleDateString()
                     : '-'}
                 </Typography>
-              </Grid>
+              </GridItem>
 
               {mou.pdfUrl && (
-                <Grid item xs={12}>
-                  <Button
-                    variant="outlined"
-                    href={mou.pdfUrl}
-                    target="_blank"
-                  >
+                <GridItem xs={12}>
+                  <Button variant="outlined" href={mou.pdfUrl} target="_blank">
                     View MOU PDF
                   </Button>
-                </Grid>
+                </GridItem>
               )}
 
               {mou.status !== 'signed' && (
-                <Grid item xs={12}>
+                <GridItem xs={12}>
                   <Button
                     variant="contained"
                     onClick={() => setOpenOtp(true)}
                   >
                     Sign MOU
                   </Button>
-                </Grid>
+                </GridItem>
               )}
-            </Grid>
+            </GridContainer>
           )}
         </Card>
       )}
-
-      {/* ================================================= */}
-      {/* OTP MODAL                                        */}
-      {/* ================================================= */}
 
       <OtpModal
         open={openOtp}
