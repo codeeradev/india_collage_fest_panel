@@ -23,10 +23,11 @@ import { DashboardContent } from 'src/layouts/dashboard';
 export function ApprovalsView() {
   const [approvals, setApprovals] = useState<IApproval[]>([]);
   const [loading, setLoading] = useState(false);
-
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  // reject modal states
+  const [filterType, setFilterType] = useState<'organiser' | 'event'>('organiser');
+
+  // reject modal
   const [openReject, setOpenReject] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [selectedApproval, setSelectedApproval] = useState<IApproval | null>(null);
@@ -40,15 +41,22 @@ export function ApprovalsView() {
     try {
       setLoading(true);
 
-      const res = await get(`${ENDPOINTS.GET_APPROVALS_REQUEST}?organiser=true`, {
-        authRequired: true,
-      });
+      const query =
+        filterType === 'organiser'
+          ? `${ENDPOINTS.GET_APPROVALS_REQUEST}?organiser=true`
+          : `${ENDPOINTS.GET_APPROVALS_REQUEST}?event=true`;
 
-      setApprovals(res.data.organiserRequests || []);
+      const res = await get(query, { authRequired: true });
+
+      setApprovals(
+        filterType === 'organiser'
+          ? res.data.organiserRequests || []
+          : res.data.eventRequests || []
+      );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filterType]);
 
   useEffect(() => {
     loadApprovals();
@@ -66,6 +74,7 @@ export function ApprovalsView() {
         {
           approvalId,
           action: 'approved',
+          type: filterType === 'organiser' ? 'organizer' : 'event',
         },
         { authRequired: true }
       );
@@ -100,6 +109,7 @@ export function ApprovalsView() {
           approvalId: selectedApproval._id,
           action: 'rejected',
           reason: rejectReason,
+          type: filterType === 'organiser' ? 'organizer' : 'event',
         },
         { authRequired: true }
       );
@@ -119,50 +129,48 @@ export function ApprovalsView() {
   // ===============================
   const columns = [
     {
-      name: 'User',
-      cell: (row: IApproval) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Avatar
-            src={row.user_id?.image ? `${IMAGE_BASE_URL}${row.user_id?.image}` : ''}
-            sx={{ width: 36, height: 36 }}
-          />
-          {row.user_id?.name}
-        </Box>
-      ),
+      name: 'User / Event',
+      cell: (row: any) =>
+        filterType === 'organiser' ? (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Avatar
+              src={row.user_id?.image ? `${IMAGE_BASE_URL}${row.user_id?.image}` : ''}
+              sx={{ width: 36, height: 36 }}
+            />
+            {row.user_id?.name}
+          </Box>
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+            <strong>{row.title}</strong>
+            <span style={{ fontSize: 12, color: '#666' }}>
+              {row.user_id?.name}
+            </span>
+          </Box>
+        ),
     },
     {
-      name: 'Email',
-      selector: (row: IApproval) => row.user_id?.email,
-    },
-    {
-      name: 'Phone',
-      selector: (row: IApproval) => row.user_id?.phone,
-    },
-    {
-      name: 'Type',
-      selector: (row: IApproval) => row.type,
-      width: '120px',
+      name: filterType === 'organiser' ? 'Email' : 'Category',
+      selector: (row: any) =>
+        filterType === 'organiser'
+          ? row.user_id?.email
+          : row.category?.name,
     },
     {
       name: 'Status',
-      cell: (row: IApproval) => (
-        <Chip
-          label={row.status}
-          size="small"
-          color={
-            row.status === 'approved' ? 'success' : row.status === 'rejected' ? 'error' : 'warning'
-          }
-        />
+      cell: () => (
+        <Chip label="pending" size="small" color="warning" />
       ),
+      width: '120px',
     },
     {
       name: 'Requested At',
-      selector: (row: IApproval) => new Date(row.createdAt).toLocaleDateString(),
+      selector: (row: any) =>
+        new Date(row.createdAt).toLocaleDateString(),
     },
     {
       name: 'Action',
       width: '200px',
-      cell: (row: IApproval) => (
+      cell: (row: any) => (
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             size="small"
@@ -192,7 +200,26 @@ export function ApprovalsView() {
     <DashboardContent>
       {/* HEADER */}
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4">Organiser Approval Requests</Typography>
+        <Typography variant="h4">
+          {filterType === 'organiser'
+            ? 'Organiser Approval Requests'
+            : 'Event Approval Requests'}
+        </Typography>
+      </Box>
+
+      {/* FILTER */}
+      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <TextField
+          select
+          label="Request Type"
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value as any)}
+          SelectProps={{ native: true }}
+          size="small"
+        >
+          <option value="organiser">Organisers</option>
+          <option value="event">Events</option>
+        </TextField>
       </Box>
 
       {/* TABLE */}
@@ -205,11 +232,11 @@ export function ApprovalsView() {
         responsive
       />
 
-      {/* ===========================
-            REJECT MODAL
-          =========================== */}
+      {/* REJECT MODAL */}
       <Dialog open={openReject} onClose={() => setOpenReject(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Reject Organizer</DialogTitle>
+        <DialogTitle>
+          Reject {filterType === 'organiser' ? 'Organizer' : 'Event'}
+        </DialogTitle>
 
         <DialogContent>
           <TextField

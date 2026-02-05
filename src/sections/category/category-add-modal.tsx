@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import type { ICategory } from 'src/types/category';
+
+import { useEffect, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Modal from '@mui/material/Modal';
@@ -14,11 +16,12 @@ import { ENDPOINTS } from 'src/api/endpoint';
 
 type Props = {
   open: boolean;
+  category?: ICategory | null;
   onClose: () => void;
-  onSuccess: (message: string) => void;
+  onSuccess: () => void;
 };
 
-export function CategoryAddModal({ open, onClose, onSuccess }: Props) {
+export function CategoryAddModal({ open, onClose, category, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
   const [icon, setIcon] = useState<File | null>(null);
 
@@ -29,25 +32,43 @@ export function CategoryAddModal({ open, onClose, onSuccess }: Props) {
     isFeatured: false,
   });
 
+  useEffect(() => {
+    if (category) {
+      setForm({
+        name: category.name,
+        description: category.description || '',
+        isActive: category.isActive,
+        isFeatured: category.isFeatured,
+      });
+    }
+  }, [category]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, checked, type } = e.target;
     setForm((p) => ({ ...p, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleSubmit = async () => {
-    setLoading(true);
-
     try {
+      setLoading(true);
+
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => fd.append(k, String(v)));
       if (icon) fd.append('image', icon);
 
-      const res = await post(ENDPOINTS.ADD_CATEGORY, fd, {
-        authRequired: true,
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      if (category?._id) {
+        await post(ENDPOINTS.EDIT_CATEGORY(category._id), fd, {
+          authRequired: true,
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      } else {
+        await post(ENDPOINTS.ADD_CATEGORY, fd, {
+          authRequired: true,
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      }
 
-      onSuccess(res.data.message || 'Category added');
+      onSuccess();
       onClose();
     } finally {
       setLoading(false);
@@ -68,8 +89,8 @@ export function CategoryAddModal({ open, onClose, onSuccess }: Props) {
           transform: 'translate(-50%, -50%)',
         }}
       >
-        <Typography variant="h6" mb={2}>
-          New Category
+        <Typography variant="h6" mb={1}>
+          {category ? 'Edit Category' : 'New Category'}
         </Typography>
 
         <TextField
@@ -83,7 +104,12 @@ export function CategoryAddModal({ open, onClose, onSuccess }: Props) {
 
         <Button component="label" variant="outlined" sx={{ my: 2 }}>
           {icon ? icon.name : 'Upload icon'}
-          <input hidden type="file" accept="image/*" onChange={(e) => setIcon(e.target.files?.[0] || null)} />
+          <input
+            hidden
+            type="file"
+            accept="image/*"
+            onChange={(e) => setIcon(e.target.files?.[0] || null)}
+          />
         </Button>
 
         <TextField

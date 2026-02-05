@@ -1,6 +1,6 @@
 import type { ICategory } from 'src/types/category';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Modal from '@mui/material/Modal';
@@ -17,16 +17,12 @@ import { ENDPOINTS } from 'src/api/endpoint';
 type Props = {
   open: boolean;
   category: ICategory | null;
+  subCategory?: any | null;
   onClose: () => void;
   onSuccess: () => void;
 };
 
-export function SubCategoryAddModal({
-  open,
-  category,
-  onClose,
-  onSuccess,
-}: Props) {
+export function SubCategoryAddModal({ open, category, subCategory, onClose, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
   const [icon, setIcon] = useState<File | null>(null);
 
@@ -42,6 +38,24 @@ export function SubCategoryAddModal({
     setForm((p) => ({ ...p, [name]: type === 'checkbox' ? checked : value }));
   };
 
+  useEffect(() => {
+    if (subCategory) {
+      setForm({
+        name: subCategory.name,
+        description: subCategory.description || '',
+        isActive: subCategory.isActive,
+        isFeatured: subCategory.isFeatured,
+      });
+    } else {
+      setForm({
+        name: '',
+        description: '',
+        isActive: true,
+        isFeatured: false,
+      });
+    }
+  }, [subCategory]);
+
   const handleSubmit = async () => {
     if (!category) return;
 
@@ -53,10 +67,19 @@ export function SubCategoryAddModal({
       fd.append('categoryId', category._id);
       if (icon) fd.append('image', icon);
 
-      await post(ENDPOINTS.ADD_SUBCATEGORY, fd, {
-        authRequired: true,
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      if (subCategory?._id) {
+        // ✅ EDIT
+        await post(ENDPOINTS.EDIT_SUBCATEGORY(subCategory._id), fd, {
+          authRequired: true,
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      } else {
+        // ✅ ADD
+        await post(ENDPOINTS.ADD_SUBCATEGORY, fd, {
+          authRequired: true,
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      }
 
       onSuccess();
       onClose();
@@ -80,7 +103,7 @@ export function SubCategoryAddModal({
         }}
       >
         <Typography variant="h6" mb={1}>
-          New Sub Category
+          {subCategory ? 'Edit Sub Category' : 'New Sub Category'}
         </Typography>
 
         <Typography variant="body2" color="text.secondary" mb={2}>
@@ -118,34 +141,18 @@ export function SubCategoryAddModal({
         />
 
         <FormControlLabel
-          control={
-            <Switch
-              checked={form.isActive}
-              name="isActive"
-              onChange={handleChange}
-            />
-          }
+          control={<Switch checked={form.isActive} name="isActive" onChange={handleChange} />}
           label="Active"
         />
 
         <FormControlLabel
-          control={
-            <Switch
-              checked={form.isFeatured}
-              name="isFeatured"
-              onChange={handleChange}
-            />
-          }
+          control={<Switch checked={form.isFeatured} name="isFeatured" onChange={handleChange} />}
           label="Featured"
         />
 
         <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
           <Button onClick={onClose}>Cancel</Button>
-          <LoadingButton
-            loading={loading}
-            variant="contained"
-            onClick={handleSubmit}
-          >
+          <LoadingButton loading={loading} variant="contained" onClick={handleSubmit}>
             Save
           </LoadingButton>
         </Box>

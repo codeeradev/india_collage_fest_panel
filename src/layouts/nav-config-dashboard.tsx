@@ -12,7 +12,7 @@ export type NavItem = {
   path: string;
   icon: React.ReactNode;
   info?: React.ReactNode;
-  roles?: number[];   
+  roles?: number[];
   onClick?: () => void;
 };
 
@@ -42,6 +42,12 @@ export const navData = [
     roles: [1],
   },
   {
+    title: 'My Agreement',
+    path: '/agreement',
+    icon: icon('ic-blog'),
+    roles: [3], // organiser only
+  },
+  {
     title: 'Events',
     path: '/events',
     icon: icon('ic-cart'),
@@ -52,7 +58,7 @@ export const navData = [
     ),
     roles: [1, 3],
   },
-    {
+  {
     title: 'Profile',
     path: '/profile',
     icon: icon('ic-cart'),

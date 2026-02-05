@@ -6,6 +6,8 @@ import { useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
+import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 import { get } from 'src/api/apiClient';
@@ -23,12 +25,16 @@ export function CategoryView() {
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [subCategories, setSubCategories] = useState<any[]>([]);
   const [activeCategory, setActiveCategory] = useState<ICategory | null>(null);
+  const [activeSubCategory, setActiveSubCategory] = useState<any | null>(null);
 
   const [mode, setMode] = useState<'category' | 'subcategory'>('category');
   const [loading, setLoading] = useState(false);
 
   const [openAdd, setOpenAdd] = useState(false);
   const [openSubAdd, setOpenSubAdd] = useState(false);
+
+  // ✅ dropdown selected category
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
 
   const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_URL;
 
@@ -51,12 +57,13 @@ export function CategoryView() {
   const loadSubCategories = async (category: ICategory) => {
     try {
       setLoading(true);
-      setActiveCategory(category);
 
-      const res = await get(
-        ENDPOINTS.GET_SUBCATEGORY_BY_CATEGORY(category._id),
-        { authRequired: true }
-      );
+      setActiveCategory(category);
+      setSelectedCategoryId(category._id);
+
+      const res = await get(ENDPOINTS.GET_SUBCATEGORY_BY_CATEGORY(category._id), {
+        authRequired: true,
+      });
 
       setSubCategories(res.data.subCategories || []);
       setMode('subcategory');
@@ -65,12 +72,33 @@ export function CategoryView() {
     }
   };
 
+  // ===============================
+  // DROPDOWN CHANGE
+  // ===============================
+  const handleCategoryDropdown = async (categoryId: string) => {
+    setSelectedCategoryId(categoryId);
+
+    const category = categories.find((c) => c._id === categoryId);
+    if (!category) return;
+
+    setActiveCategory(category);
+    setLoading(true);
+
+    const res = await get(ENDPOINTS.GET_SUBCATEGORY_BY_CATEGORY(categoryId), {
+      authRequired: true,
+    });
+
+    setSubCategories(res.data.subCategories || []);
+    setMode('subcategory');
+    setLoading(false);
+  };
+
   useEffect(() => {
     loadCategories();
   }, [loadCategories]);
 
   // ===============================
-  // CATEGORY COLUMNS
+  // CATEGORY TABLE
   // ===============================
   const categoryColumns = [
     {
@@ -92,11 +120,7 @@ export function CategoryView() {
     {
       name: 'Sub Categories',
       cell: (row: ICategory) => (
-        <Button
-          size="small"
-          variant="outlined"
-          onClick={() => loadSubCategories(row)}
-        >
+        <Button size="small" variant="outlined" onClick={() => loadSubCategories(row)}>
           {row.subCategoryCount ?? 0}
         </Button>
       ),
@@ -109,10 +133,26 @@ export function CategoryView() {
       name: 'Featured',
       cell: (row: ICategory) => (row.isFeatured ? 'Yes' : 'No'),
     },
+    {
+      name: 'Actions',
+      width: '120px',
+      cell: (row: ICategory) => (
+        <Button
+          size="small"
+          variant="outlined"
+          onClick={() => {
+            setActiveCategory(row);
+            setOpenAdd(true);
+          }}
+        >
+          Edit
+        </Button>
+      ),
+    },
   ];
 
   // ===============================
-  // SUB CATEGORY COLUMNS
+  // SUB CATEGORY TABLE
   // ===============================
   const subCategoryColumns = [
     {
@@ -139,17 +179,49 @@ export function CategoryView() {
       name: 'Featured',
       cell: (row: any) => (row.isFeatured ? 'Yes' : 'No'),
     },
+    {
+      name: 'Actions',
+      width: '120px',
+      cell: (row: any) => (
+        <Button
+          size="small"
+          variant="outlined"
+          onClick={() => {
+            setActiveSubCategory(row);
+            setOpenSubAdd(true);
+          }}
+        >
+          Edit
+        </Button>
+      ),
+    },
   ];
 
   return (
     <DashboardContent>
-      {/* HEADER */}
-      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
+      {/* ================= HEADER ================= */}
+      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
-          {mode === 'category'
-            ? 'Categories'
-            : `Sub Categories of ${activeCategory?.name}`}
+          {mode === 'category' ? 'Categories' : `Sub Categories of ${activeCategory?.name}`}
         </Typography>
+
+        {/* ✅ DROPDOWN — SCREENSHOT LOCATION */}
+        {mode === 'category' && (
+          <TextField
+            select
+            size="small"
+            label="View Sub Categories"
+            sx={{ width: 260 }}
+            value={selectedCategoryId}
+            onChange={(e) => handleCategoryDropdown(e.target.value)}
+          >
+            {categories.map((cat) => (
+              <MenuItem key={cat._id} value={cat._id}>
+                {cat.name}
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
 
         {mode === 'subcategory' && (
           <Button
@@ -167,7 +239,10 @@ export function CategoryView() {
             variant="contained"
             color="inherit"
             startIcon={<Iconify icon="mingcute:add-line" />}
-            onClick={() => setOpenAdd(true)}
+            onClick={() => {
+              setActiveCategory(null);
+              setOpenAdd(true);
+            }}
           >
             New Category
           </Button>
@@ -183,6 +258,7 @@ export function CategoryView() {
             setMode('category');
             setSubCategories([]);
             setActiveCategory(null);
+            setSelectedCategoryId('');
           }}
         >
           Back to Categories
@@ -202,14 +278,22 @@ export function CategoryView() {
       {/* MODALS */}
       <CategoryAddModal
         open={openAdd}
-        onClose={() => setOpenAdd(false)}
+        category={activeCategory} // ✅ THIS WAS MISSING
+        onClose={() => {
+          setOpenAdd(false);
+          setActiveCategory(null); // ✅ important reset
+        }}
         onSuccess={loadCategories}
       />
 
       <SubCategoryAddModal
         open={openSubAdd}
         category={activeCategory}
-        onClose={() => setOpenSubAdd(false)}
+        subCategory={activeSubCategory} // ✅ NEW
+        onClose={() => {
+          setOpenSubAdd(false);
+          setActiveSubCategory(null); // ✅ reset
+        }}
         onSuccess={() => loadSubCategories(activeCategory!)}
       />
     </DashboardContent>

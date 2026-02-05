@@ -23,6 +23,7 @@ export const SignInPage = lazy(() => import('src/pages/sign-in'));
 export const ProductsPage = lazy(() => import('src/pages/events'));
 export const ProfilePage = lazy(() => import('src/pages/profile'));
 export const MouPage = lazy(() => import('src/pages/mou'));
+export const AgreementPage = lazy(() => import('src/pages/mouAggrement'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 
 const renderFallback = () => (
@@ -123,6 +124,14 @@ export const routesSection: RouteObject[] = [
         element: (
           <ProtectedRoute allowedRoles={[1, 3]}>
             <MouPage />
+          </ProtectedRoute>
+        ),
+      },
+       {
+        path: 'agreement',
+        element: (
+          <ProtectedRoute allowedRoles={[1, 3]}>
+            <AgreementPage />
           </ProtectedRoute>
         ),
       },
