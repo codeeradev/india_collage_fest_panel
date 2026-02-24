@@ -1,5 +1,5 @@
 import DataTable from 'react-data-table-component';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -20,6 +20,11 @@ import { CityAddModal } from '../city-add-modal';
 
 // ----------------------------------------------------------------------
 
+type AlertState = {
+  message: string;
+  severity: 'success' | 'error';
+};
+
 export function CityView() {
   const [cities, setCities] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -30,12 +35,10 @@ export function CityView() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | 'active' | 'inactive'>('all');
 
-  const [alert, setAlert] = useState<string | null>(null);
+  const [alert, setAlert] = useState<AlertState | null>(null);
   const [statusLoadingId, setStatusLoadingId] = useState<string | null>(null);
+  const [csvUploading, setCsvUploading] = useState(false);
 
-  // ===============================
-  // LOAD CITIES
-  // ===============================
   const loadCities = useCallback(async () => {
     try {
       setLoading(true);
@@ -50,9 +53,79 @@ export function CityView() {
     loadCities();
   }, [loadCities]);
 
-  // ===============================
-  // STATUS TOGGLE (FIXED METHOD + LOADER)
-  // ===============================
+  const escapeCsv = (value: unknown) => {
+    if (value == null) return '';
+    const stringValue = String(value);
+    if (/[",\n\r]/.test(stringValue)) {
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    }
+    return stringValue;
+  };
+
+  const handleDownloadCsvSample = () => {
+    const headers = ['city', 'description', 'featured', 'latitude', 'longitude'];
+    const rows = cities.map((city) => {
+      const featured = city.featured ?? city.popular ?? '';
+      return [
+        city.city ?? '',
+        city.description ?? '',
+        featured === '' ? '' : Boolean(featured),
+        city.latitude ?? '',
+        city.longitude ?? '',
+      ];
+    });
+
+    const csv = [
+      headers.join(','),
+      ...rows.map((row) => row.map((cell) => escapeCsv(cell)).join(',')),
+    ].join('\r\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `cities_${new Date().toISOString().slice(0, 10)}.csv`;
+    anchor.click();
+
+    URL.revokeObjectURL(url);
+  };
+
+  const handleUploadCsv = async (file: File) => {
+    if (!file) return;
+
+    setCsvUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('csv', file);
+
+      const res = await post(ENDPOINTS.ADD_CITY_CSV, formData, {
+        authRequired: true,
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      const result = res.data?.data;
+      const summary =
+        result && typeof result === 'object'
+          ? `Created: ${result.createdCount ?? 0}, Existing: ${result.skippedExisting ?? 0}, Invalid: ${result.skippedInvalid ?? 0}, Duplicates: ${result.skippedDuplicateInFile ?? 0}`
+          : '';
+
+      setAlert({
+        message: summary ? `${res.data.message}. ${summary}` : res.data.message || 'CSV uploaded',
+        severity: 'success',
+      });
+
+      await loadCities();
+    } catch (error: any) {
+      setAlert({
+        message: error?.response?.data?.message || 'Failed to upload CSV',
+        severity: 'error',
+      });
+    } finally {
+      setCsvUploading(false);
+    }
+  };
+
   const toggleStatus = async (row: any) => {
     if (statusLoadingId) return;
 
@@ -65,36 +138,34 @@ export function CityView() {
         { authRequired: true }
       );
 
-      setAlert(res.data.message || 'Status updated');
-      loadCities();
+      setAlert({
+        message: res.data.message || 'Status updated',
+        severity: 'success',
+      });
+
+      await loadCities();
     } finally {
       setStatusLoadingId(null);
     }
   };
 
-  // ===============================
-  // SEARCH + FILTER
-  // ===============================
   const filteredCities = useMemo(
     () =>
-      cities.filter((c) => {
-        const matchSearch = c.city
+      cities.filter((city) => {
+        const matchSearch = String(city.city ?? '')
           .toLowerCase()
           .includes(search.toLowerCase());
 
         const matchStatus =
           status === 'all' ||
-          (status === 'active' && c.is_active) ||
-          (status === 'inactive' && !c.is_active);
+          (status === 'active' && city.is_active) ||
+          (status === 'inactive' && !city.is_active);
 
         return matchSearch && matchStatus;
       }),
     [cities, search, status]
   );
 
-  // ===============================
-  // TABLE COLUMNS
-  // ===============================
   const columns = [
     {
       name: 'City',
@@ -108,6 +179,10 @@ export function CityView() {
     {
       name: 'Longitude',
       selector: (row: any) => row.longitude,
+    },
+    {
+      name: 'Featured',
+      selector: (row: any) => (row.featured ?? row.popular ? 'Yes' : 'No'),
     },
     {
       name: 'Status',
@@ -145,11 +220,39 @@ export function CityView() {
 
   return (
     <DashboardContent>
-      {/* HEADER */}
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
+      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 1 }}>
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
           Cities
         </Typography>
+
+        <Button
+          component="label"
+          variant="outlined"
+          color="inherit"
+          startIcon={<Iconify icon="eva:arrow-ios-upward-fill" />}
+          disabled={csvUploading}
+        >
+          Upload CSV
+          <input
+            hidden
+            type="file"
+            accept=".csv,text/csv"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = '';
+              if (file) handleUploadCsv(file);
+            }}
+          />
+        </Button>
+
+        <Button
+          variant="outlined"
+          color="inherit"
+          startIcon={<Iconify icon="eva:arrow-ios-downward-fill" />}
+          onClick={handleDownloadCsvSample}
+        >
+          Download CSV Sample
+        </Button>
 
         <Button
           variant="contained"
@@ -161,7 +264,6 @@ export function CityView() {
         </Button>
       </Box>
 
-      {/* SEARCH + FILTER BAR */}
       <Box
         sx={{
           mb: 2,
@@ -174,7 +276,7 @@ export function CityView() {
           size="small"
           placeholder="Search city..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(event) => setSearch(event.target.value)}
           sx={{ width: 260 }}
         />
 
@@ -182,7 +284,7 @@ export function CityView() {
           size="small"
           select
           value={status}
-          onChange={(e) => setStatus(e.target.value as any)}
+          onChange={(event) => setStatus(event.target.value as 'all' | 'active' | 'inactive')}
           sx={{ width: 180 }}
         >
           <MenuItem value="all">All</MenuItem>
@@ -191,7 +293,6 @@ export function CityView() {
         </TextField>
       </Box>
 
-      {/* TABLE */}
       <DataTable
         columns={columns}
         data={filteredCities}
@@ -201,7 +302,6 @@ export function CityView() {
         responsive
       />
 
-      {/* ADD / EDIT MODAL */}
       <CityAddModal
         open={openAdd}
         city={selectedCity}
@@ -209,20 +309,18 @@ export function CityView() {
           setOpenAdd(false);
           setSelectedCity(null);
         }}
-        onSuccess={(msg: string) => {
-          setAlert(msg);
+        onSuccess={(message: string) => {
+          setAlert({ message, severity: 'success' });
           loadCities();
         }}
       />
 
-      {/* ALERT */}
-      <Snackbar
-        open={!!alert}
-        autoHideDuration={3000}
-        onClose={() => setAlert(null)}
-      >
-        <Alert severity="success" onClose={() => setAlert(null)}>
-          {alert}
+      <Snackbar open={!!alert} autoHideDuration={3000} onClose={() => setAlert(null)}>
+        <Alert
+          severity={alert?.severity || 'success'}
+          onClose={() => setAlert(null)}
+        >
+          {alert?.message}
         </Alert>
       </Snackbar>
     </DashboardContent>

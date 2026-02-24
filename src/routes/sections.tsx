@@ -17,13 +17,16 @@ import ProtectedRoute from 'src/auth/ProtectedRoute';
 export const DashboardPage = lazy(() => import('src/pages/dashboard'));
 export const CategoryPage = lazy(() => import('src/pages/category'));
 export const CityPage = lazy(() => import('src/pages/city'));
+export const BlogPage = lazy(() => import('src/pages/blog'));
 export const UserPage = lazy(() => import('src/pages/user'));
 export const ApprovalPage = lazy(() => import('src/pages/approvals'));
+export const PermissionPage = lazy(() => import('src/pages/permisson'));
 export const SignInPage = lazy(() => import('src/pages/sign-in'));
 export const ProductsPage = lazy(() => import('src/pages/events'));
 export const ProfilePage = lazy(() => import('src/pages/profile'));
 export const MouPage = lazy(() => import('src/pages/mou'));
 export const AgreementPage = lazy(() => import('src/pages/mouAggrement'));
+export const SocialPage = lazy(() => import('src/pages/social'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 
 const renderFallback = () => (
@@ -58,7 +61,6 @@ export const routesSection: RouteObject[] = [
       </ProtectedRoute>
     ),
     children: [
-      // ✅ Admin + Organizer
       {
         index: true,
         element: (
@@ -67,8 +69,6 @@ export const routesSection: RouteObject[] = [
           </ProtectedRoute>
         ),
       },
-
-      // ✅ Admin only
       {
         path: 'category',
         element: (
@@ -94,6 +94,14 @@ export const routesSection: RouteObject[] = [
         ),
       },
       {
+        path: 'permisson',
+        element: (
+          <ProtectedRoute allowedRoles={[1]}>
+            <PermissionPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: 'city',
         element: (
           <ProtectedRoute allowedRoles={[1]}>
@@ -101,8 +109,6 @@ export const routesSection: RouteObject[] = [
           </ProtectedRoute>
         ),
       },
-
-      // ✅ Admin + Organizer
       {
         path: 'events',
         element: (
@@ -111,7 +117,23 @@ export const routesSection: RouteObject[] = [
           </ProtectedRoute>
         ),
       },
-       {
+      {
+        path: 'social',
+        element: (
+          <ProtectedRoute allowedRoles={[1, 3]}>
+            <SocialPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'blog',
+        element: (
+          <ProtectedRoute allowedRoles={[1]}>
+            <BlogPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: 'profile',
         element: (
           <ProtectedRoute allowedRoles={[1, 3]}>
@@ -127,7 +149,7 @@ export const routesSection: RouteObject[] = [
           </ProtectedRoute>
         ),
       },
-       {
+      {
         path: 'agreement',
         element: (
           <ProtectedRoute allowedRoles={[1, 3]}>
@@ -137,8 +159,6 @@ export const routesSection: RouteObject[] = [
       },
     ],
   },
-
-  // 🔓 public route
   {
     path: 'sign-in',
     element: (
@@ -147,12 +167,9 @@ export const routesSection: RouteObject[] = [
       </AuthLayout>
     ),
   },
-
   {
     path: '404',
     element: <Page404 />,
   },
-
   { path: '*', element: <Page404 /> },
 ];
-

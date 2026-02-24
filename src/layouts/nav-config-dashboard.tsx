@@ -16,7 +16,7 @@ export type NavItem = {
   onClick?: () => void;
 };
 
-export const navData = [
+export const navData: NavItem[] = [
   {
     title: 'Dashboard',
     path: '/',
@@ -42,10 +42,16 @@ export const navData = [
     roles: [1],
   },
   {
+    title: 'Permisson',
+    path: '/permisson',
+    icon: icon('ic-analytics'),
+    roles: [1],
+  },
+  {
     title: 'My Agreement',
     path: '/agreement',
     icon: icon('ic-blog'),
-    roles: [3], // organiser only
+    roles: [3],
   },
   {
     title: 'Events',
@@ -57,6 +63,18 @@ export const navData = [
       </Label>
     ),
     roles: [1, 3],
+  },
+  {
+    title: 'Social',
+    path: '/social',
+    icon: icon('ic-blog'),
+    roles: [1, 3],
+  },
+  {
+    title: 'Blogs',
+    path: '/blog',
+    icon: icon('ic-blog'),
+    roles: [1],
   },
   {
     title: 'Profile',

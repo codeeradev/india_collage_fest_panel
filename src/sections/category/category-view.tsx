@@ -33,14 +33,10 @@ export function CategoryView() {
   const [openAdd, setOpenAdd] = useState(false);
   const [openSubAdd, setOpenSubAdd] = useState(false);
 
-  // ✅ dropdown selected category
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
 
-  const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_URL;
+  const imageBaseUrl = import.meta.env.VITE_IMAGE_URL;
 
-  // ===============================
-  // LOAD CATEGORIES
-  // ===============================
   const loadCategories = useCallback(async () => {
     try {
       setLoading(true);
@@ -51,9 +47,6 @@ export function CategoryView() {
     }
   }, []);
 
-  // ===============================
-  // LOAD SUB CATEGORIES
-  // ===============================
   const loadSubCategories = async (category: ICategory) => {
     try {
       setLoading(true);
@@ -72,13 +65,10 @@ export function CategoryView() {
     }
   };
 
-  // ===============================
-  // DROPDOWN CHANGE
-  // ===============================
   const handleCategoryDropdown = async (categoryId: string) => {
     setSelectedCategoryId(categoryId);
 
-    const category = categories.find((c) => c._id === categoryId);
+    const category = categories.find((item) => item._id === categoryId);
     if (!category) return;
 
     setActiveCategory(category);
@@ -97,16 +87,13 @@ export function CategoryView() {
     loadCategories();
   }, [loadCategories]);
 
-  // ===============================
-  // CATEGORY TABLE
-  // ===============================
   const categoryColumns = [
     {
       name: 'Icon',
       width: '80px',
       cell: (row: ICategory) => (
         <Avatar
-          src={row.icon ? `${IMAGE_BASE_URL}${row.icon}` : ''}
+          src={row.icon ? `${imageBaseUrl}${row.icon}` : ''}
           variant="rounded"
           sx={{ width: 40, height: 40 }}
         />
@@ -151,16 +138,13 @@ export function CategoryView() {
     },
   ];
 
-  // ===============================
-  // SUB CATEGORY TABLE
-  // ===============================
   const subCategoryColumns = [
     {
       name: 'Icon',
       width: '80px',
       cell: (row: any) => (
         <Avatar
-          src={row.icon ? `${IMAGE_BASE_URL}${row.icon}` : ''}
+          src={row.icon ? `${imageBaseUrl}${row.icon}` : ''}
           variant="rounded"
           sx={{ width: 40, height: 40 }}
         />
@@ -199,13 +183,11 @@ export function CategoryView() {
 
   return (
     <DashboardContent>
-      {/* ================= HEADER ================= */}
-      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
           {mode === 'category' ? 'Categories' : `Sub Categories of ${activeCategory?.name}`}
         </Typography>
 
-        {/* ✅ DROPDOWN — SCREENSHOT LOCATION */}
         {mode === 'category' && (
           <TextField
             select
@@ -213,11 +195,11 @@ export function CategoryView() {
             label="View Sub Categories"
             sx={{ width: 260 }}
             value={selectedCategoryId}
-            onChange={(e) => handleCategoryDropdown(e.target.value)}
+            onChange={(event) => handleCategoryDropdown(event.target.value)}
           >
-            {categories.map((cat) => (
-              <MenuItem key={cat._id} value={cat._id}>
-                {cat.name}
+            {categories.map((category) => (
+              <MenuItem key={category._id} value={category._id}>
+                {category.name}
               </MenuItem>
             ))}
           </TextField>
@@ -249,7 +231,6 @@ export function CategoryView() {
         )}
       </Box>
 
-      {/* BACK BUTTON */}
       {mode === 'subcategory' && (
         <Button
           sx={{ mb: 2 }}
@@ -265,7 +246,6 @@ export function CategoryView() {
         </Button>
       )}
 
-      {/* TABLE */}
       <DataTable
         columns={mode === 'category' ? categoryColumns : subCategoryColumns}
         data={mode === 'category' ? categories : subCategories}
@@ -275,13 +255,12 @@ export function CategoryView() {
         responsive
       />
 
-      {/* MODALS */}
       <CategoryAddModal
         open={openAdd}
-        category={activeCategory} // ✅ THIS WAS MISSING
+        category={activeCategory}
         onClose={() => {
           setOpenAdd(false);
-          setActiveCategory(null); // ✅ important reset
+          setActiveCategory(null);
         }}
         onSuccess={loadCategories}
       />
@@ -289,12 +268,14 @@ export function CategoryView() {
       <SubCategoryAddModal
         open={openSubAdd}
         category={activeCategory}
-        subCategory={activeSubCategory} // ✅ NEW
+        subCategory={activeSubCategory}
         onClose={() => {
           setOpenSubAdd(false);
-          setActiveSubCategory(null); // ✅ reset
+          setActiveSubCategory(null);
         }}
-        onSuccess={() => loadSubCategories(activeCategory!)}
+        onSuccess={() => {
+          if (activeCategory) loadSubCategories(activeCategory);
+        }}
       />
     </DashboardContent>
   );

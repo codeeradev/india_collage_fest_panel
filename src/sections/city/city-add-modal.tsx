@@ -23,7 +23,6 @@ type Props = {
 
 export function CityAddModal({ open, onClose, onSuccess, city }: Props) {
   const isEdit = Boolean(city);
-
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
@@ -32,58 +31,51 @@ export function CityAddModal({ open, onClose, onSuccess, city }: Props) {
     longitude: '',
     description: '',
     is_active: true,
-    popular: true,
-    image: null as File | null,
+    featured: false,
   });
 
   useEffect(() => {
-    if (city) {
-      setForm({
-        city: city.city || '',
-        latitude: city.latitude || '',
-        longitude: city.longitude || '',
-        description: city.description || '',
-        is_active: city.is_active ?? true,
-        popular: city.popular ?? true,
-        image: null,
-      });
-    } else {
-      setForm({
-        city: '',
-        latitude: '',
-        longitude: '',
-        description: '',
-        is_active: true,
-        popular: true,
-        image: null,
-      });
-    }
+    setForm(
+      city
+        ? {
+            city: city.city || '',
+            latitude: city.latitude || '',
+            longitude: city.longitude || '',
+            description: city.description || '',
+            is_active: city.is_active ?? true,
+            featured: city.featured ?? city.popular ?? false,
+          }
+        : {
+            city: '',
+            latitude: '',
+            longitude: '',
+            description: '',
+            is_active: true,
+            featured: false,
+          }
+    );
   }, [city]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, checked, type } = e.target;
-    setForm((p) => ({ ...p, [name]: type === 'checkbox' ? checked : value }));
+    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const data = new FormData();
-
-      data.append('city', form.city);
-      data.append('latitude', form.latitude);
-      data.append('longitude', form.longitude);
-      data.append('description', form.description);
-      data.append('is_active', String(form.is_active));
-      data.append('popular', String(form.popular));
-
-      if (form.image) {
-        data.append('image', form.image); // backend will read image[0]
-      }
+      const payload = {
+        city: form.city,
+        latitude: form.latitude,
+        longitude: form.longitude,
+        description: form.description,
+        is_active: form.is_active,
+        featured: form.featured,
+      };
 
       const res = isEdit
-        ? await post(ENDPOINTS.EDIT_CITY(city._id), data, { authRequired: true })
-        : await post(ENDPOINTS.ADD_CITY, data, { authRequired: true });
+        ? await post(ENDPOINTS.EDIT_CITY(city._id), payload, { authRequired: true })
+        : await post(ENDPOINTS.ADD_CITY, payload, { authRequired: true });
 
       onSuccess(res.data.message || 'City saved');
       onClose();
@@ -97,7 +89,7 @@ export function CityAddModal({ open, onClose, onSuccess, city }: Props) {
       <Box
         sx={{
           width: 420,
-          maxHeight: '85vh', // 👈 prevents screen overflow
+          maxHeight: '85vh',
           p: 3,
           bgcolor: 'background.paper',
           borderRadius: 2,
@@ -142,56 +134,28 @@ export function CityAddModal({ open, onClose, onSuccess, city }: Props) {
             rows={3}
           />
 
-          {/* IMAGE UPLOAD */}
-          <Button component="label" variant="outlined" size="small">
-            Upload City Image
-            <input
-              hidden
-              type="file"
-              accept="image/*"
-              onChange={(e) => setForm((p) => ({ ...p, image: e.target.files?.[0] || null }))}
-            />
-          </Button>
-
-          {/* IMAGE PREVIEW */}
-          {(form.image || city?.image) && (
-            <Box>
-              <img
-                src={form.image ? URL.createObjectURL(form.image) : city.image}
-                style={{
-                  width: '100%',
-                  height: 140,
-                  objectFit: 'cover',
-                  borderRadius: 8,
-                }}
-              />
-            </Box>
-          )}
-
-          {/* SWITCHES */}
           <Box display="flex" justifyContent="space-between">
             <FormControlLabel
               control={
                 <Switch
-                  checked={form.popular}
-                  onChange={(e) => setForm((p) => ({ ...p, popular: e.target.checked }))}
+                  checked={form.featured}
+                  onChange={(e) => setForm((prev) => ({ ...prev, featured: e.target.checked }))}
                 />
               }
-              label="Popular"
+              label="Featured"
             />
 
             <FormControlLabel
               control={
                 <Switch
                   checked={form.is_active}
-                  onChange={(e) => setForm((p) => ({ ...p, is_active: e.target.checked }))}
+                  onChange={(e) => setForm((prev) => ({ ...prev, is_active: e.target.checked }))}
                 />
               }
               label="Active"
             />
           </Box>
 
-          {/* ACTIONS */}
           <Box display="flex" justifyContent="flex-end" gap={1} mt={1}>
             <Button onClick={onClose}>Cancel</Button>
             <LoadingButton loading={loading} variant="contained" onClick={handleSubmit}>

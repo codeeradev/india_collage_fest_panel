@@ -24,7 +24,6 @@ export function Logo({
   isSingle = true,
   ...other
 }: LogoProps) {
-
   return (
     <LogoRoot
       component={RouterLink}
@@ -34,17 +33,17 @@ export function Logo({
       className={mergeClasses([logoClasses.root, className])}
       sx={[
         {
-          width: 60,
-          height: 50,
-          ...(!isSingle && { width: 112, height: 46 }),
+          width: 150,
+          height: 42,
+          ...(!isSingle && { width: 196, height: 55 }),
           ...(disabled && { pointerEvents: 'none' }),
         },
         ...(Array.isArray(sx) ? sx : [sx]),
       ]}
       {...other}
     >
-            <img
-        src="public/assets/logo.png"
+      <img
+        src="/assets/logo.png"
         alt="Logo"
         style={{
           width: '100%',
@@ -53,7 +52,6 @@ export function Logo({
           display: 'block',
         }}
       />
-
     </LogoRoot>
   );
 }
