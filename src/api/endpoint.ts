@@ -1,7 +1,7 @@
-// export const API_BASE_URL = 'http://localhost:3001';
+export const API_BASE_URL = 'http://localhost:3001';
 // export const API_BASE_URL = 'https://india-collage-fest-api.onrender.com';
 // export const API_BASE_URL = 'http://172.93.223.239:3001/';
-export const API_BASE_URL = 'https://api.indiacollegefest.com';
+// export const API_BASE_URL = 'https://api.indiacollegefest.com';
 
 export const ENDPOINTS = {
   ADD_CATEGORY: 'admin/add-category',
@@ -17,6 +17,7 @@ export const ENDPOINTS = {
 
   ADD_EVENT: '/add-event',
   GET_EVENTS: 'admin/get-event',
+  FETCH_GOOGLE_EVENTS_PREVIEW: 'admin/events/google/fetch-preview',
   GET_APPROVALS_REQUEST: 'admin/get-approvals-request',
   APPROVAL_ACTION: 'admin/approval-action',
 

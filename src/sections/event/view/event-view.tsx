@@ -15,6 +15,7 @@ import { Iconify } from 'src/components/iconify';
 import EventTable from '../event-table';
 import EventToolbar from '../event-toolbar';
 import EventFormModal from '../event-form-modal';
+import GoogleFetchPreviewDialog from '../google-fetch-preview-dialog';
 
 export default function EventsView() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -22,6 +23,7 @@ export default function EventsView() {
   const [total, setTotal] = useState(0);
 
   const [open, setOpen] = useState(false);
+  const [openGoogleFetch, setOpenGoogleFetch] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
   const [selected, setSelected] = useState<Event | null>(null);
   const [search, setSearch] = useState('');
@@ -43,10 +45,19 @@ export default function EventsView() {
 
   return (
     <DashboardContent>
-      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
+      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
           Events
         </Typography>
+
+        <Button
+          variant="outlined"
+          color="inherit"
+          startIcon={<Iconify icon="solar:restart-bold" />}
+          onClick={() => setOpenGoogleFetch(true)}
+        >
+          Fetch Google Events
+        </Button>
 
         <Button
           variant="contained"
@@ -90,6 +101,10 @@ export default function EventsView() {
         event={selected}
         onClose={() => setOpen(false)}
         onSuccess={fetchEvents}
+      />
+      <GoogleFetchPreviewDialog
+        open={openGoogleFetch}
+        onClose={() => setOpenGoogleFetch(false)}
       />
     </DashboardContent>
   );
