@@ -27,7 +27,16 @@ import {
 import { post } from 'src/api/apiClient';
 import { ENDPOINTS } from 'src/api/endpoint';
 
-type DatePreset = '' | 'today' | 'tomorrow' | 'thisWeek' | 'thisWeekend' | 'nextWeek' | 'nextMonth';
+type DatePreset =
+  | ''
+  | 'today'
+  | 'tomorrow'
+  | 'thisWeek'
+  | 'thisWeekend'
+  | 'nextWeek'
+  | 'nextMonth'
+  | 'thisMonth'
+  | 'next6months';
 
 type PreviewEvent = {
   source: 'google';
@@ -69,6 +78,8 @@ const PRESET_OPTIONS: Array<{ label: string; value: DatePreset }> = [
   { label: 'This Weekend', value: 'thisWeekend' },
   { label: 'Next Week', value: 'nextWeek' },
   { label: 'Next Month', value: 'nextMonth' },
+  { label: 'This Month', value: 'thisMonth' },
+  { label: 'Next 6 Months', value: 'next6months' },
 ];
 
 const QUERY_SUGGESTIONS = [
@@ -81,7 +92,6 @@ const QUERY_SUGGESTIONS = [
 export default function GoogleFetchPreviewDialog({ open, onClose }: Props) {
   const [query, setQuery] = useState('events india');
   const [datePreset, setDatePreset] = useState<DatePreset>('');
-  const [limit, setLimit] = useState('50');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -96,7 +106,6 @@ export default function GoogleFetchPreviewDialog({ open, onClose }: Props) {
       const payload = {
         query: query.trim(),
         datePreset: datePreset || undefined,
-        limit: Number(limit) || 50,
       };
 
       const res = await post(ENDPOINTS.FETCH_GOOGLE_EVENTS_PREVIEW, payload, {
@@ -120,17 +129,10 @@ export default function GoogleFetchPreviewDialog({ open, onClose }: Props) {
 
       <DialogContent>
         <Stack spacing={2} mt={1}>
-          <Alert severity="info">
-            Preview only. No event import/insertion is done yet.
-          </Alert>
+          <Alert severity="info">Preview only. No event import/insertion is done yet.</Alert>
           <Alert severity="warning">
-            Google scraper date presets can be inconsistent. If result is empty, try query text like
-            {' '}
-            <strong>events delhi this week</strong>
-            {' '}
-            and keep preset as
-            {' '}
-            <strong>Any Date</strong>.
+            Google scraper date presets can be inconsistent. If result is empty, try query text like{' '}
+            <strong>events delhi this week</strong> and keep preset as <strong>Any Date</strong>.
           </Alert>
 
           {error && <Alert severity="error">{error}</Alert>}
@@ -158,13 +160,6 @@ export default function GoogleFetchPreviewDialog({ open, onClose }: Props) {
               ))}
             </TextField>
 
-            <TextField
-              label="Limit"
-              type="number"
-              value={limit}
-              onChange={(e) => setLimit(e.target.value)}
-              sx={{ minWidth: 120 }}
-            />
           </Stack>
 
           <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
