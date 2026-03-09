@@ -11,12 +11,16 @@ import {
   Button,
   MenuItem,
   TextField,
+  IconButton,
   Typography,
+  InputAdornment,
   CircularProgress,
 } from '@mui/material';
 
 import { ENDPOINTS } from 'src/api/endpoint';
 import { get, post } from 'src/api/apiClient';
+
+import { Iconify } from 'src/components/iconify';
 
 import OtpModal from 'src/sections/mouManagment/otp-modal';
 
@@ -82,6 +86,7 @@ export default function ProfileView() {
   })();
 
   const isOrganizer = user?.roleId === 3;
+  const isAdmin = user?.roleId === 1;
 
   const [cities, setCities] = useState<City[]>([]);
   const [form, setForm] = useState<UserProfileForm>({
@@ -89,6 +94,7 @@ export default function ProfileView() {
     phone: '',
     location: '',
     password: '',
+    serpApiKey: '',
   });
 
   const [mou, setMou] = useState<MOU | null>(null);
@@ -104,6 +110,7 @@ export default function ProfileView() {
 
   const [loading, setLoading] = useState(false);
   const [openOtp, setOpenOtp] = useState(false);
+  const [showSerpApiKey, setShowSerpApiKey] = useState(false);
 
   const [openPreview, setOpenPreview] = useState(false);
   const [previewPdf, setPreviewPdf] = useState('');
@@ -115,7 +122,10 @@ export default function ProfileView() {
     if (!user?._id) return;
 
     const load = async () => {
-      const req: Promise<any>[] = [get(ENDPOINTS.GET_PROFILE(user._id)), get(ENDPOINTS.GET_CITY)];
+      const req: Promise<any>[] = [
+        get(ENDPOINTS.GET_PROFILE(user._id), { authRequired: true }),
+        get(ENDPOINTS.GET_CITY),
+      ];
 
       if (isOrganizer) {
         req.push(get(ENDPOINTS.GET_MY_MOU, { authRequired: true }));
@@ -132,6 +142,7 @@ export default function ProfileView() {
         phone: u.phone ? String(u.phone) : '',
         location: u.location?._id || '',
         password: '',
+        serpApiKey: isAdmin ? String(u.serpApiKey || '') : '',
       });
 
       setPreview({
@@ -146,7 +157,7 @@ export default function ProfileView() {
     };
 
     load();
-  }, [user?._id]);
+  }, [user?._id, isAdmin, isOrganizer]);
 
   /* ================= SUBMIT ================= */
 
@@ -159,6 +170,7 @@ export default function ProfileView() {
       fd.append('phone', form.phone);
       fd.append('password', form.password);
       fd.append('location', form.location);
+      if (isAdmin) fd.append('serpApiKey', form.serpApiKey);
 
       if (image) fd.append('image', image);
       if (banner) fd.append('bannerImage', banner);
@@ -194,7 +206,7 @@ export default function ProfileView() {
 
       setPreviewPdf(url);
       setOpenPreview(true);
-    } catch (err) {
+    } catch {
       alert('Failed to load PDF preview');
     } finally {
       setPreviewLoading(false);
@@ -344,6 +356,29 @@ export default function ProfileView() {
               onChange={(e) => setForm({ ...form, password: e.target.value })}
             />
           </GridItem>
+
+          {isAdmin && (
+            <GridItem xs={12}>
+              <TextField
+                fullWidth
+                label="Google Events API Key (SerpAPI)"
+                type={showSerpApiKey ? 'text' : 'password'}
+                value={form.serpApiKey}
+                onChange={(e) => setForm({ ...form, serpApiKey: e.target.value })}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowSerpApiKey((prev) => !prev)}>
+                        <Iconify
+                          icon={showSerpApiKey ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
+                        />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </GridItem>
+          )}
 
           <GridItem xs={12}>
             <Button

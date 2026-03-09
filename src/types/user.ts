@@ -5,6 +5,7 @@ export interface User {
   name: string;
   phone: number;
   email?: string;
+  serpApiKey?: string;
 
   location: string;
 
@@ -26,6 +27,7 @@ export interface UserProfileForm {
   phone: string;
   location: string;
   password: string;
+  serpApiKey: string;
 }
 
 /**
