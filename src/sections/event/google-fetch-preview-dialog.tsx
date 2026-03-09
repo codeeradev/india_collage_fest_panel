@@ -110,6 +110,7 @@ export default function GoogleFetchPreviewDialog({ open, onClose }: Props) {
 
       const res = await post(ENDPOINTS.FETCH_GOOGLE_EVENTS_PREVIEW, payload, {
         authRequired: true,
+        timeout: 180000
       });
 
       setEvents(res.data?.events || []);
