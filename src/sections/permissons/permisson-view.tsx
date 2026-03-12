@@ -4,6 +4,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Checkbox from '@mui/material/Checkbox';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -19,6 +20,8 @@ type User = {
   name: string;
   email: string;
   permissions?: Record<string, boolean>;
+  eventUploadLimit?: number;
+  socialUploadLimit?: number;
 };
 
 const PERMISSIONS = ['EDIT_EVENTS', 'POSTER_UPLOAD', 'VIEW_ANALYTICS'];
@@ -28,6 +31,8 @@ export default function OrganizerPermissionsView() {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<User | null>(null);
   const [permissionState, setPermissionState] = useState<Record<string, boolean>>({});
+  const [eventUploadLimit, setEventUploadLimit] = useState('0');
+  const [socialUploadLimit, setSocialUploadLimit] = useState('0');
 
   const fetchOrganizers = async () => {
     const res = await get(ENDPOINTS.GET_USERS, {
@@ -44,6 +49,8 @@ export default function OrganizerPermissionsView() {
   const openEditor = (user: User) => {
     setSelected(user);
     setPermissionState(user.permissions || {});
+    setEventUploadLimit(String(user.eventUploadLimit ?? 0));
+    setSocialUploadLimit(String(user.socialUploadLimit ?? 0));
     setOpen(true);
   };
 
@@ -56,11 +63,15 @@ export default function OrganizerPermissionsView() {
 
   const savePermissions = async () => {
     if (!selected) return;
+    const normalizedEventLimit = Math.max(0, Math.floor(Number(eventUploadLimit) || 0));
+    const normalizedSocialLimit = Math.max(0, Math.floor(Number(socialUploadLimit) || 0));
 
     await post(
       `${ENDPOINTS.UPDATE_USER_PERMISSIONS}/${selected._id}`,
       {
         permissions: permissionState,
+        eventUploadLimit: normalizedEventLimit,
+        socialUploadLimit: normalizedSocialLimit,
       },
       { authRequired: true }
     );
@@ -116,6 +127,28 @@ export default function OrganizerPermissionsView() {
               label={perm.replace('_', ' ')}
             />
           ))}
+
+          <TextField
+            fullWidth
+            margin="normal"
+            type="number"
+            label="Event Upload Limit"
+            value={eventUploadLimit}
+            onChange={(e) => setEventUploadLimit(e.target.value)}
+            inputProps={{ min: 0 }}
+            helperText="0 means unlimited"
+          />
+
+          <TextField
+            fullWidth
+            margin="normal"
+            type="number"
+            label="Social Upload Limit"
+            value={socialUploadLimit}
+            onChange={(e) => setSocialUploadLimit(e.target.value)}
+            inputProps={{ min: 0 }}
+            helperText="0 means unlimited"
+          />
         </DialogContent>
 
         <DialogActions>

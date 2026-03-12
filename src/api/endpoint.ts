@@ -44,6 +44,7 @@ export const ENDPOINTS = {
 
   GET_USERS: 'admin/get-users',
   UPDATE_USER_PERMISSIONS: 'admin/organizer/permissions',
+  ADMIN_EDIT_USER: (id: string) => `admin/edit-user/${id}`,
 
   ADMIN_DASHBOARD_STATS: 'admin/dashboard-stats',
   USER_DASHBOARD: 'admin/user/dashboard',
