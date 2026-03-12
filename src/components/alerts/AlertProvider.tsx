@@ -1,4 +1,4 @@
-import { useState, useContext, createContext } from 'react';
+import { useRef, useMemo, useState, useEffect, useContext, useCallback, createContext } from 'react';
 
 import { Box, Alert, Snackbar, CircularProgress } from '@mui/material';
 
@@ -14,19 +14,39 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<AlertType>('success');
   const [message, setMessage] = useState('');
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const setAlert = (alertType: AlertType, msg: string) => {
+  useEffect(
+    () => () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    },
+    []
+  );
+
+  const setAlert = useCallback((alertType: AlertType, msg: string) => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+
     setType(alertType);
     setMessage(msg);
     setOpen(true);
 
     if (alertType !== 'loading') {
-      setTimeout(() => setOpen(false), 2500);
+      closeTimeoutRef.current = setTimeout(() => {
+        setOpen(false);
+        closeTimeoutRef.current = null;
+      }, 2500);
     }
-  };
+  }, []);
+
+  const contextValue = useMemo(() => ({ setAlert }), [setAlert]);
 
   return (
-    <AlertContext.Provider value={{ setAlert }}>
+    <AlertContext.Provider value={contextValue}>
       {children}
 
       <Snackbar open={open} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>

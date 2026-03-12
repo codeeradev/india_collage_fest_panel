@@ -4,14 +4,18 @@ export interface UserRow {
   _id: string;
   name?: string;
   email?: string;
+  phone?: number | string;
   roleId: number;
   status?: boolean;
+  permissions?: Record<string, boolean>;
+  eventUploadLimit?: number;
+  socialUploadLimit?: number;
   mouSigned?: boolean;
   mouId?: string | null;
   createdAt?: string;
 }
 
-const ROLE_LABEL: Record<number, string> = {
+export const ROLE_LABEL: Record<number, string> = {
   1: 'Super Admin',
   2: 'Organization',
   3: 'Event Organizer',

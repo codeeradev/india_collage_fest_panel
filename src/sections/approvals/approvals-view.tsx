@@ -18,12 +18,17 @@ import { ENDPOINTS } from 'src/api/endpoint';
 import { get, post } from 'src/api/apiClient';
 import { DashboardContent } from 'src/layouts/dashboard';
 
+import { useAlert } from 'src/components/alerts/AlertProvider';
+
 // ----------------------------------------------------------------------
 
 export function ApprovalsView() {
   const [approvals, setApprovals] = useState<IApproval[]>([]);
   const [loading, setLoading] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [processingAction, setProcessingAction] = useState<
+    'approved' | 'rejected' | 'resubmitted' | null
+  >(null);
 
   const [filterType, setFilterType] = useState<'organiser' | 'event'>('organiser');
 
@@ -33,6 +38,7 @@ export function ApprovalsView() {
   const [reasonAction, setReasonAction] = useState<'rejected' | 'resubmitted'>('rejected');
   const [selectedApproval, setSelectedApproval] = useState<IApproval | null>(null);
 
+  const { setAlert } = useAlert();
   const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_URL;
 
   // ===============================
@@ -54,10 +60,15 @@ export function ApprovalsView() {
           ? res.data.organiserRequests || []
           : res.data.eventRequests || []
       );
+    } catch (error: any) {
+      setAlert(
+        'error',
+        error?.response?.data?.message || 'Failed to load approval requests'
+      );
     } finally {
       setLoading(false);
     }
-  }, [filterType]);
+  }, [filterType, setAlert]);
 
   useEffect(() => {
     loadApprovals();
@@ -69,6 +80,11 @@ export function ApprovalsView() {
   const approveRequest = async (approvalId: string) => {
     try {
       setProcessingId(approvalId);
+      setProcessingAction('approved');
+      setAlert(
+        'loading',
+        `Approving ${filterType === 'organiser' ? 'organizer' : 'event'} request...`
+      );
 
       await post(
         ENDPOINTS.APPROVAL_ACTION,
@@ -81,8 +97,15 @@ export function ApprovalsView() {
       );
 
       setApprovals((prev) => prev.filter((item) => item._id !== approvalId));
+      setAlert(
+        'success',
+        `${filterType === 'organiser' ? 'Organizer' : 'Event'} request approved`
+      );
+    } catch (error: any) {
+      setAlert('error', error?.response?.data?.message || 'Failed to approve request');
     } finally {
       setProcessingId(null);
+      setProcessingAction(null);
     }
   };
 
@@ -99,6 +122,15 @@ export function ApprovalsView() {
     setOpenReasonModal(true);
   };
 
+  const closeReasonModal = () => {
+    if (processingId && selectedApproval && processingId === selectedApproval._id) return;
+
+    setOpenReasonModal(false);
+    setSelectedApproval(null);
+    setActionReason('');
+    setReasonAction('rejected');
+  };
+
   // ===============================
   // SUBMIT REASON ACTION
   // ===============================
@@ -107,6 +139,13 @@ export function ApprovalsView() {
 
     try {
       setProcessingId(selectedApproval._id);
+      setProcessingAction(reasonAction);
+      setAlert(
+        'loading',
+        reasonAction === 'rejected'
+          ? `Rejecting ${filterType === 'organiser' ? 'organizer' : 'event'} request...`
+          : `Sending ${filterType === 'organiser' ? 'organizer' : 'event'} resubmit request...`
+      );
 
       await post(
         ENDPOINTS.APPROVAL_ACTION,
@@ -120,13 +159,22 @@ export function ApprovalsView() {
       );
 
       setApprovals((prev) => prev.filter((item) => item._id !== selectedApproval._id));
-
-      setOpenReasonModal(false);
-      setSelectedApproval(null);
-      setActionReason('');
-      setReasonAction('rejected');
+      setAlert(
+        'success',
+        reasonAction === 'rejected'
+          ? `${filterType === 'organiser' ? 'Organizer' : 'Event'} request rejected`
+          : `${filterType === 'organiser' ? 'Organizer' : 'Event'} request marked for resubmission`
+      );
+      closeReasonModal();
+    } catch (error: any) {
+      setAlert(
+        'error',
+        error?.response?.data?.message ||
+          (reasonAction === 'rejected' ? 'Failed to reject request' : 'Failed to resubmit request')
+      );
     } finally {
       setProcessingId(null);
+      setProcessingAction(null);
     }
   };
 
@@ -178,35 +226,49 @@ export function ApprovalsView() {
       width: '300px',
       cell: (row: any) => (
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            size="small"
-            color="success"
-            variant="contained"
-            disabled={processingId === row._id}
-            onClick={() => approveRequest(row._id)}
-          >
-            Approve
-          </Button>
+          {(() => {
+            const isRowProcessing = processingId === row._id;
 
-          <Button
-            size="small"
-            color="warning"
-            variant="outlined"
-            disabled={processingId === row._id}
-            onClick={() => openReasonActionModal(row, 'resubmitted')}
-          >
-            Resubmit
-          </Button>
+            return (
+              <>
+                <Button
+                  size="small"
+                  color="success"
+                  variant="contained"
+                  disabled={isRowProcessing}
+                  onClick={() => approveRequest(row._id)}
+                >
+                  {isRowProcessing && processingAction === 'approved'
+                    ? 'Approving...'
+                    : 'Approve'}
+                </Button>
 
-          <Button
-            size="small"
-            color="error"
-            variant="outlined"
-            disabled={processingId === row._id}
-            onClick={() => openReasonActionModal(row, 'rejected')}
-          >
-            Reject
-          </Button>
+                <Button
+                  size="small"
+                  color="warning"
+                  variant="outlined"
+                  disabled={isRowProcessing}
+                  onClick={() => openReasonActionModal(row, 'resubmitted')}
+                >
+                  {isRowProcessing && processingAction === 'resubmitted'
+                    ? 'Resubmitting...'
+                    : 'Resubmit'}
+                </Button>
+
+                <Button
+                  size="small"
+                  color="error"
+                  variant="outlined"
+                  disabled={isRowProcessing}
+                  onClick={() => openReasonActionModal(row, 'rejected')}
+                >
+                  {isRowProcessing && processingAction === 'rejected'
+                    ? 'Rejecting...'
+                    : 'Reject'}
+                </Button>
+              </>
+            );
+          })()}
         </Box>
       ),
     },
@@ -251,7 +313,7 @@ export function ApprovalsView() {
       {/* REJECT / RESUBMIT MODAL */}
       <Dialog
         open={openReasonModal}
-        onClose={() => setOpenReasonModal(false)}
+        onClose={closeReasonModal}
         maxWidth="sm"
         fullWidth
       >
@@ -277,15 +339,37 @@ export function ApprovalsView() {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={() => setOpenReasonModal(false)}>Cancel</Button>
+          <Button
+            onClick={closeReasonModal}
+            disabled={
+              !!selectedApproval &&
+              processingId === selectedApproval._id &&
+              (processingAction === 'rejected' || processingAction === 'resubmitted')
+            }
+          >
+            Cancel
+          </Button>
 
           <Button
             variant="contained"
             color={reasonAction === 'rejected' ? 'error' : 'warning'}
-            disabled={!actionReason.trim()}
+            disabled={
+              !actionReason.trim() ||
+              (!!selectedApproval &&
+                processingId === selectedApproval._id &&
+                (processingAction === 'rejected' || processingAction === 'resubmitted'))
+            }
             onClick={submitReasonAction}
           >
-            {reasonAction === 'rejected' ? 'Reject' : 'Resubmit'}
+            {!!selectedApproval &&
+            processingId === selectedApproval._id &&
+            (processingAction === 'rejected' || processingAction === 'resubmitted')
+              ? reasonAction === 'rejected'
+                ? 'Rejecting...'
+                : 'Resubmitting...'
+              : reasonAction === 'rejected'
+                ? 'Reject'
+                : 'Resubmit'}
           </Button>
         </DialogActions>
       </Dialog>
