@@ -27,9 +27,10 @@ export function ApprovalsView() {
 
   const [filterType, setFilterType] = useState<'organiser' | 'event'>('organiser');
 
-  // reject modal
-  const [openReject, setOpenReject] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
+  // reason modal (reject / resubmit)
+  const [openReasonModal, setOpenReasonModal] = useState(false);
+  const [actionReason, setActionReason] = useState('');
+  const [reasonAction, setReasonAction] = useState<'rejected' | 'resubmitted'>('rejected');
   const [selectedApproval, setSelectedApproval] = useState<IApproval | null>(null);
 
   const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_URL;
@@ -86,18 +87,22 @@ export function ApprovalsView() {
   };
 
   // ===============================
-  // OPEN REJECT MODAL
+  // OPEN REASON MODAL
   // ===============================
-  const openRejectModal = (row: IApproval) => {
+  const openReasonActionModal = (
+    row: IApproval,
+    action: 'rejected' | 'resubmitted'
+  ) => {
     setSelectedApproval(row);
-    setRejectReason('');
-    setOpenReject(true);
+    setActionReason('');
+    setReasonAction(action);
+    setOpenReasonModal(true);
   };
 
   // ===============================
-  // SUBMIT REJECT
+  // SUBMIT REASON ACTION
   // ===============================
-  const submitReject = async () => {
+  const submitReasonAction = async () => {
     if (!selectedApproval) return;
 
     try {
@@ -107,8 +112,8 @@ export function ApprovalsView() {
         ENDPOINTS.APPROVAL_ACTION,
         {
           approvalId: selectedApproval._id,
-          action: 'rejected',
-          reason: rejectReason,
+          action: reasonAction,
+          reason: actionReason,
           type: filterType === 'organiser' ? 'organizer' : 'event',
         },
         { authRequired: true }
@@ -116,9 +121,10 @@ export function ApprovalsView() {
 
       setApprovals((prev) => prev.filter((item) => item._id !== selectedApproval._id));
 
-      setOpenReject(false);
+      setOpenReasonModal(false);
       setSelectedApproval(null);
-      setRejectReason('');
+      setActionReason('');
+      setReasonAction('rejected');
     } finally {
       setProcessingId(null);
     }
@@ -169,7 +175,7 @@ export function ApprovalsView() {
     },
     {
       name: 'Action',
-      width: '200px',
+      width: '300px',
       cell: (row: any) => (
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
@@ -184,10 +190,20 @@ export function ApprovalsView() {
 
           <Button
             size="small"
+            color="warning"
+            variant="outlined"
+            disabled={processingId === row._id}
+            onClick={() => openReasonActionModal(row, 'resubmitted')}
+          >
+            Resubmit
+          </Button>
+
+          <Button
+            size="small"
             color="error"
             variant="outlined"
             disabled={processingId === row._id}
-            onClick={() => openRejectModal(row)}
+            onClick={() => openReasonActionModal(row, 'rejected')}
           >
             Reject
           </Button>
@@ -232,10 +248,16 @@ export function ApprovalsView() {
         responsive
       />
 
-      {/* REJECT MODAL */}
-      <Dialog open={openReject} onClose={() => setOpenReject(false)} maxWidth="sm" fullWidth>
+      {/* REJECT / RESUBMIT MODAL */}
+      <Dialog
+        open={openReasonModal}
+        onClose={() => setOpenReasonModal(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>
-          Reject {filterType === 'organiser' ? 'Organizer' : 'Event'}
+          {reasonAction === 'rejected' ? 'Reject' : 'Resubmit'}{' '}
+          {filterType === 'organiser' ? 'Organizer' : 'Event'}
         </DialogTitle>
 
         <DialogContent>
@@ -243,23 +265,27 @@ export function ApprovalsView() {
             fullWidth
             multiline
             rows={4}
-            label="Reject reason"
-            placeholder="Enter rejection reason..."
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
+            label={reasonAction === 'rejected' ? 'Reject reason' : 'Resubmit reason'}
+            placeholder={
+              reasonAction === 'rejected'
+                ? 'Enter rejection reason...'
+                : 'Enter resubmit reason...'
+            }
+            value={actionReason}
+            onChange={(e) => setActionReason(e.target.value)}
           />
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={() => setOpenReject(false)}>Cancel</Button>
+          <Button onClick={() => setOpenReasonModal(false)}>Cancel</Button>
 
           <Button
             variant="contained"
-            color="error"
-            disabled={!rejectReason.trim()}
-            onClick={submitReject}
+            color={reasonAction === 'rejected' ? 'error' : 'warning'}
+            disabled={!actionReason.trim()}
+            onClick={submitReasonAction}
           >
-            Reject
+            {reasonAction === 'rejected' ? 'Reject' : 'Resubmit'}
           </Button>
         </DialogActions>
       </Dialog>
