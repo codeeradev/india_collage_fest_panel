@@ -38,25 +38,25 @@ export const navData: NavItem[] = [
   {
     title: 'Approvals',
     path: '/approvals',
-    icon: icon('ic-analytics'),
+    icon: icon('ic-approval'),
     roles: [1],
   },
   {
     title: 'Permisson',
     path: '/permisson',
-    icon: icon('ic-analytics'),
+    icon: icon('ic-permission'),
     roles: [1],
   },
   {
     title: 'My Agreement',
     path: '/agreement',
-    icon: icon('ic-blog'),
+    icon: icon('ic-mou'),
     roles: [3],
   },
   {
     title: 'Events',
     path: '/events',
-    icon: icon('ic-cart'),
+    icon: icon('ic-event'),
     info: (
       <Label color="error" variant="inverted">
         +3
@@ -67,7 +67,7 @@ export const navData: NavItem[] = [
   {
     title: 'Social',
     path: '/social',
-    icon: icon('ic-blog'),
+    icon: icon('ic-social'),
     roles: [1, 3],
   },
   {
@@ -79,25 +79,25 @@ export const navData: NavItem[] = [
   {
     title: 'Profile',
     path: '/profile',
-    icon: icon('ic-cart'),
+    icon: icon('ic-profile'),
     roles: [1, 3],
   },
   {
     title: 'City',
     path: '/city',
-    icon: icon('ic-blog'),
+    icon: icon('ic-city'),
     roles: [1],
   },
   {
     title: 'Mou Managment',
     path: '/mou',
-    icon: icon('ic-blog'),
+    icon: icon('ic-mou'),
     roles: [1],
   },
   {
     title: 'Logout',
     path: '#',
-    icon: icon('ic-lock'),
+    icon: icon('ic-logout'),
     onClick: () => logout(),
   },
 ];
