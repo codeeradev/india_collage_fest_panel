@@ -1,23 +1,23 @@
 import { useState } from 'react';
 
 import {
-  Alert,
   Box,
   Chip,
   Link,
+  Alert,
   Stack,
   Table,
   Paper,
   Button,
   Dialog,
   TableRow,
+  MenuItem,
   TableBody,
   TableCell,
-  MenuItem,
   TextField,
-  DialogTitle,
   TableHead,
   Typography,
+  DialogTitle,
   DialogContent,
   DialogActions,
   TableContainer,
@@ -68,6 +68,7 @@ type PreviewMeta = {
 type Props = {
   open: boolean;
   onClose: () => void;
+  onImported?: () => void;
 };
 
 const PRESET_OPTIONS: Array<{ label: string; value: DatePreset }> = [
@@ -89,12 +90,18 @@ const QUERY_SUGGESTIONS = [
   'events kolkata',
 ];
 
-export default function GoogleFetchPreviewDialog({ open, onClose }: Props) {
+const getImportSummaryText = (summary: any) =>
+  `Created: ${summary?.createdCount ?? 0}, Existing: ${summary?.skippedExisting ?? 0}, Invalid: ${summary?.skippedInvalid ?? 0}, Duplicates: ${summary?.skippedDuplicateInPayload ?? 0}`;
+
+export default function GoogleFetchPreviewDialog({ open, onClose, onImported }: Props) {
   const [query, setQuery] = useState('events india');
   const [datePreset, setDatePreset] = useState<DatePreset>('');
 
   const [loading, setLoading] = useState(false);
+  const [importingAll, setImportingAll] = useState(false);
+  const [importingSingleId, setImportingSingleId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [events, setEvents] = useState<PreviewEvent[]>([]);
   const [meta, setMeta] = useState<PreviewMeta | null>(null);
 
@@ -102,6 +109,7 @@ export default function GoogleFetchPreviewDialog({ open, onClose }: Props) {
     try {
       setLoading(true);
       setError('');
+      setSuccess('');
 
       const payload = {
         query: query.trim(),
@@ -124,19 +132,55 @@ export default function GoogleFetchPreviewDialog({ open, onClose }: Props) {
     }
   };
 
+  const handleImport = async (importEvents: PreviewEvent[], singleEventId?: string) => {
+    if (!importEvents.length) return;
+
+    try {
+      setError('');
+      setSuccess('');
+
+      if (singleEventId) {
+        setImportingSingleId(singleEventId);
+      } else {
+        setImportingAll(true);
+      }
+
+      const res = await post(
+        ENDPOINTS.IMPORT_GOOGLE_EVENTS,
+        { events: importEvents },
+        {
+          authRequired: true,
+          timeout: 180000,
+        }
+      );
+
+      const summaryText = getImportSummaryText(res.data?.data);
+      setSuccess(`${res.data?.message || 'Events imported successfully'}. ${summaryText}`);
+      onImported?.();
+    } catch (e: any) {
+      setError(e?.response?.data?.message || 'Failed to import events');
+    } finally {
+      setImportingAll(false);
+      setImportingSingleId(null);
+    }
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
       <DialogTitle>Fetch Google Events (Scraper)</DialogTitle>
 
       <DialogContent>
         <Stack spacing={2} mt={1}>
-          <Alert severity="info">Preview only. No event import/insertion is done yet.</Alert>
+          <Alert severity="info">
+            Fetch events, then use Import buttons to create them in database.
+          </Alert>
           <Alert severity="warning">
             Google scraper date presets can be inconsistent. If result is empty, try query text like{' '}
             <strong>events delhi this week</strong> and keep preset as <strong>Any Date</strong>.
           </Alert>
 
           {error && <Alert severity="error">{error}</Alert>}
+          {success && <Alert severity="success">{success}</Alert>}
 
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
             <TextField
@@ -176,16 +220,32 @@ export default function GoogleFetchPreviewDialog({ open, onClose }: Props) {
           </Stack>
 
           <Box>
-            <Button variant="contained" onClick={handleFetch} disabled={loading || !query.trim()}>
-              {loading ? (
-                <>
-                  <CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />
-                  Fetching...
-                </>
-              ) : (
-                'Fetch Events'
-              )}
-            </Button>
+            <Stack direction="row" spacing={1}>
+              <Button variant="contained" onClick={handleFetch} disabled={loading || !query.trim()}>
+                {loading ? (
+                  <>
+                    <CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />
+                    Fetching...
+                  </>
+                ) : (
+                  'Fetch Events'
+                )}
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => handleImport(events)}
+                disabled={loading || importingAll || Boolean(importingSingleId) || !events.length}
+              >
+                {importingAll ? (
+                  <>
+                    <CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />
+                    Importing All...
+                  </>
+                ) : (
+                  'Import All'
+                )}
+              </Button>
+            </Stack>
           </Box>
 
           {meta && (
@@ -211,6 +271,7 @@ export default function GoogleFetchPreviewDialog({ open, onClose }: Props) {
                     <TableCell>Location</TableCell>
                     <TableCell>When</TableCell>
                     <TableCell>Source</TableCell>
+                    <TableCell align="right">Import</TableCell>
                   </TableRow>
                 </TableHead>
 
@@ -239,6 +300,23 @@ export default function GoogleFetchPreviewDialog({ open, onClose }: Props) {
                       <TableCell>{event.address || '-'}</TableCell>
                       <TableCell>{event.when || '-'}</TableCell>
                       <TableCell>{event.source}</TableCell>
+                      <TableCell align="right">
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          disabled={Boolean(importingSingleId) || importingAll || loading}
+                          onClick={() => handleImport([event], event.googleEventId)}
+                        >
+                          {importingSingleId === event.googleEventId ? (
+                            <>
+                              <CircularProgress size={16} color="inherit" sx={{ mr: 1 }} />
+                              Importing...
+                            </>
+                          ) : (
+                            'Import'
+                          )}
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
