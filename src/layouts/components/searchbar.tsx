@@ -1,6 +1,7 @@
 import type { BoxProps } from '@mui/material/Box';
+import type { NavItem } from 'src/layouts/nav-config-dashboard';
 
-import { useState, useCallback } from 'react';
+import { type FormEvent, useMemo, useState, useCallback } from 'react';
 import { varAlpha } from 'minimal-shared/utils';
 
 import Box from '@mui/material/Box';
@@ -14,20 +15,98 @@ import ClickAwayListener from '@mui/material/ClickAwayListener';
 
 import { Iconify } from 'src/components/iconify';
 
+import { getToken, getTokenPayload } from 'src/auth/auth';
+
+import { useRouter } from 'src/routes/hooks';
+
+import { navData } from '../nav-config-dashboard';
+
 // ----------------------------------------------------------------------
+
+type SearchableNavItem = Pick<NavItem, 'title' | 'path'> & {
+  normalizedTitle: string;
+  normalizedPath: string;
+};
+
+const normalizeText = (value: string) => value.trim().toLowerCase().replace(/\s+/g, ' ');
 
 export function Searchbar({ sx, ...other }: BoxProps) {
   const theme = useTheme();
+  const router = useRouter();
 
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const searchableNavItems = useMemo<SearchableNavItem[]>(() => {
+    const token = getToken();
+    const payload = token ? getTokenPayload(token) : null;
+    const roleId = payload?.roleId;
+
+    return navData
+      .filter((item) => {
+        const hasRoute = Boolean(item.path && item.path !== '#' && !item.onClick);
+        const hasRoleAccess =
+          !item.roles || (typeof roleId === 'number' && item.roles.includes(roleId));
+
+        return hasRoute && hasRoleAccess;
+      })
+      .map((item) => ({
+        title: item.title,
+        path: item.path,
+        normalizedTitle: normalizeText(item.title),
+        normalizedPath: normalizeText(item.path),
+      }));
+  }, []);
 
   const handleOpen = useCallback(() => {
-    setOpen((prev) => !prev);
+    setOpen(true);
   }, []);
 
   const handleClose = useCallback(() => {
     setOpen(false);
+    setSearchQuery('');
   }, []);
+
+  const findMatchingPath = useCallback(
+    (query: string) => {
+      const normalizedQuery = normalizeText(query);
+      if (!normalizedQuery) return null;
+
+      const exactMatch = searchableNavItems.find(
+        (item) =>
+          item.normalizedTitle === normalizedQuery || item.normalizedPath === normalizedQuery
+      );
+
+      if (exactMatch) return exactMatch.path;
+
+      const partialMatch = searchableNavItems.find(
+        (item) =>
+          item.normalizedTitle.includes(normalizedQuery) ||
+          normalizedQuery.includes(item.normalizedTitle) ||
+          item.normalizedPath.includes(normalizedQuery)
+      );
+
+      return partialMatch?.path ?? null;
+    },
+    [searchableNavItems]
+  );
+
+  const handleSearch = useCallback(() => {
+    const query = searchQuery.trim();
+    if (!query) return;
+
+    const matchedPath = findMatchingPath(query);
+    if (matchedPath) {
+      router.push(matchedPath);
+      handleClose();
+      return;
+    }
+
+    if (query.startsWith('/')) {
+      router.push(query);
+      handleClose();
+    }
+  }, [findMatchingPath, handleClose, router, searchQuery]);
 
   return (
     <ClickAwayListener onClickAway={handleClose}>
@@ -54,10 +133,15 @@ export function Searchbar({ sx, ...other }: BoxProps) {
                 xs: 'var(--layout-header-mobile-height)',
                 md: 'var(--layout-header-desktop-height)',
               },
-              backdropFilter: `blur(6px)`,
-              WebkitBackdropFilter: `blur(6px)`,
+              backdropFilter: 'blur(6px)',
+              WebkitBackdropFilter: 'blur(6px)',
               backgroundColor: varAlpha(theme.vars.palette.background.defaultChannel, 0.8),
               ...sx,
+            }}
+            component="form"
+            onSubmit={(event: FormEvent<HTMLFormElement>) => {
+              event.preventDefault();
+              handleSearch();
             }}
             {...other}
           >
@@ -65,7 +149,9 @@ export function Searchbar({ sx, ...other }: BoxProps) {
               autoFocus
               fullWidth
               disableUnderline
-              placeholder="Search…"
+              value={searchQuery}
+              placeholder="Search menu (e.g. profile)"
+              onChange={(event) => setSearchQuery(event.target.value)}
               startAdornment={
                 <InputAdornment position="start">
                   <Iconify width={20} icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
@@ -73,7 +159,7 @@ export function Searchbar({ sx, ...other }: BoxProps) {
               }
               sx={{ fontWeight: 'fontWeightBold' }}
             />
-            <Button variant="contained" onClick={handleClose}>
+            <Button type="submit" variant="contained">
               Search
             </Button>
           </Box>
