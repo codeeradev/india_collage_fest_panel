@@ -1,8 +1,8 @@
 import type { BoxProps } from '@mui/material/Box';
 import type { NavItem } from 'src/layouts/nav-config-dashboard';
 
-import { type FormEvent, useMemo, useState, useCallback } from 'react';
 import { varAlpha } from 'minimal-shared/utils';
+import { useMemo, useState, useCallback, type FormEvent } from 'react';
 
 import Box from '@mui/material/Box';
 import Slide from '@mui/material/Slide';
@@ -13,11 +13,11 @@ import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
 
+import { useRouter } from 'src/routes/hooks';
+
 import { Iconify } from 'src/components/iconify';
 
 import { getToken, getTokenPayload } from 'src/auth/auth';
-
-import { useRouter } from 'src/routes/hooks';
 
 import { navData } from '../nav-config-dashboard';
 

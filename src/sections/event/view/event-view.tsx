@@ -39,6 +39,11 @@ export default function EventsView() {
   const [csvUploading, setCsvUploading] = useState(false);
   const [alert, setAlert] = useState<AlertState | null>(null);
 
+  const actionButtonSx = {
+    width: { xs: '100%', sm: 'auto' },
+    justifyContent: { xs: 'flex-start', sm: 'center' },
+  };
+
   const fetchEvents = async () => {
     const res = await get(ENDPOINTS.GET_EVENTS, {
       params: { page, limit: 10, search, cityId, category },
@@ -153,8 +158,16 @@ export default function EventsView() {
 
   return (
     <DashboardContent>
-      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Typography variant="h4" sx={{ flexGrow: 1 }}>
+      <Box
+        sx={{
+          mb: 3,
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: { xs: 'stretch', sm: 'center' },
+          gap: 1.5,
+        }}
+      >
+        <Typography variant="h4" sx={{ flexGrow: 1, width: { xs: '100%', sm: 'auto' } }}>
           Events
         </Typography>
 
@@ -164,6 +177,7 @@ export default function EventsView() {
           color="inherit"
           startIcon={<Iconify icon="eva:arrow-ios-upward-fill" />}
           disabled={csvUploading}
+          sx={actionButtonSx}
         >
           Upload CSV
           <input
@@ -183,6 +197,7 @@ export default function EventsView() {
           color="inherit"
           startIcon={<Iconify icon="eva:arrow-ios-downward-fill" />}
           onClick={handleDownloadCsvSample}
+          sx={actionButtonSx}
         >
           Download CSV Sample
         </Button>
@@ -192,6 +207,7 @@ export default function EventsView() {
           color="inherit"
           startIcon={<Iconify icon="solar:restart-bold" />}
           onClick={() => setOpenGoogleFetch(true)}
+          sx={actionButtonSx}
         >
           Fetch Google Events
         </Button>
@@ -200,6 +216,7 @@ export default function EventsView() {
           variant="contained"
           color="inherit"
           startIcon={<Iconify icon="mingcute:add-line" />}
+          sx={actionButtonSx}
           onClick={() => {
             setMode('create');
             setSelected(null);
